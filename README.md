@@ -199,7 +199,12 @@ npm run build
 # Reinicie o serviço (ex.: pm2 restart avisos-web) ou npm run start atrás do reverse proxy.
 ```
 
-### Docker (imagem em `web/Dockerfile`)
+### Docker (Coolify / imagem)
+
+- **Coolify** (e outros que fazem `docker build` na raiz): usa o **`Dockerfile` na raiz** do repositório; não é preciso apontar para `web/`.
+- **`docker compose`** local continua a usar `web/Dockerfile` com contexto `./web` (ficheiro `docker-compose.yml`).
+
+### Docker (imagem em `web/Dockerfile` — compose local)
 
 Na raiz do clone (onde está `docker-compose.yml`):
 

@@ -1,0 +1,19 @@
+# Contexto na raiz do repo — mantém a imagem pequena
+.git
+.github
+data
+
+web/node_modules
+web/.next
+web/.git
+
+web/.env
+web/.env.*
+!web/.env.example
+
+web/data/*.db
+web/data/*.db-wal
+web/data/*.db-shm
+
+**/npm-debug.log*
+**/yarn-error.log*
