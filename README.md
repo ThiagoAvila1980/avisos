@@ -160,8 +160,9 @@ Você pode copiar a **pasta `Avisos` completa** (pendrive, rede, ZIP, etc.) em v
 
 ## Onde ficam os dados
 
-- **Arquivo:** `web/data/notificacoes.db`  
-- Os dados **não** ficam só na memória: ao fechar o servidor e abrir de novo, o cadastro permanece, desde que a pasta `data` vá junto na cópia.
+- **Desenvolvimento local:** `web/data/notificacoes.db`
+- **Docker na VPS:** pasta **`data/` na raiz do repositório** (ao lado de `docker-compose.yml`), montada em `/app/data` no contentor — copie para lá o seu `notificacoes.db` antes ou depois do primeiro arranque (com o contentor parado ao substituir o ficheiro).
+- Os dados **não** ficam só na memória: o cadastro permanece desde que o ficheiro `.db` (e o volume/pasta corretos) sejam preservados.
 
 ---
 
@@ -198,6 +199,20 @@ npm run build
 # Reinicie o serviço (ex.: pm2 restart avisos-web) ou npm run start atrás do reverse proxy.
 ```
 
+### Docker (imagem em `web/Dockerfile`)
+
+Na raiz do clone (onde está `docker-compose.yml`):
+
+1. Copie o ficheiro **`notificacoes.db`** (e, se existirem, `notificacoes.db-wal` / `notificacoes.db-shm`) para **`data/`** — a pasta `data/` na raiz é montada no contentor como `/app/data`, onde a app grava o SQLite.
+2. Crie **`.env`** na raiz a partir de `.env.example` (mesmas variáveis que `web/.env.example`: VAPID, `ALLOWED_ORIGINS`, etc.).
+3. Suba o serviço:
+
+```bash
+docker compose up -d --build
+```
+
+A app fica na porta **3000**. Para atualizar código: `git pull`, depois `docker compose up -d --build` de novo. O **processo único** continua a ser um contentor (não escale réplicas com o mesmo volume SQLite).
+
 ### CI no GitHub
 
 O workflow `.github/workflows/ci-web.yml` executa `npm ci` e `npm run build` em `web/` quando há alterações nessa pasta — útil a validar antes de implantar.
@@ -233,6 +248,7 @@ Se ainda quiser disparar o `.bat` pelo **Agendador de Tarefas** só para ver log
 
 - **Next.js** (React), **Tailwind CSS**, componentes **shadcn/ui**
 - **SQLite** em arquivo local (`better-sqlite3`)
+- **Docker** — `web/Dockerfile` (output `standalone`) e `docker-compose.yml` na raiz com volume para `notificacoes.db`
 - **web-push** (VAPID) — notificações push no navegador; lembretes agendados no servidor via `instrumentation.ts`
 - **node-notifier** — opcional / legado (toast Windows comentado em `check-entregas-reminder.cjs`)
 

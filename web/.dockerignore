@@ -1,0 +1,18 @@
+# Dependências e artefactos locais
+node_modules
+.next
+.git
+.gitignore
+
+# Segredos e ambiente local
+.env
+.env.*
+!.env.example
+
+# Base SQLite local — montar por volume na VPS (ver docker-compose na raiz)
+data/*.db
+data/*.db-wal
+data/*.db-shm
+
+npm-debug.log*
+yarn-error.log*

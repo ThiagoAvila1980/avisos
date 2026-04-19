@@ -1,3 +1,13 @@
 # Raiz do monorepo leve (app em web/)
 .DS_Store
 Thumbs.db
+
+# Docker Compose na VPS (não commitar segredos)
+.env
+.env.*
+!.env.example
+
+# Volume SQLite na raiz (ficheiros reais só na máquina / cópia manual)
+/data/*.db
+/data/*.db-wal
+/data/*.db-shm

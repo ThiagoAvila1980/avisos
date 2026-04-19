@@ -1,0 +1,16 @@
+# Na VPS: coloque `notificacoes.db` (e opcionalmente .db-wal / .db-shm) em ./data/
+# junto a este ficheiro, copie `.env` a partir de web/.env.example e execute:
+#   docker compose up -d --build
+
+services:
+  avisos:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

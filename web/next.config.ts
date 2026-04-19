@@ -1,7 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  /** Imagem Docker mais leve (`web/Dockerfile`). */
+  output: "standalone",
   serverExternalPackages: ["better-sqlite3"],
+  /** Garante o binário nativo do SQLite no trace `standalone`. */
+  outputFileTracingIncludes: {
+    "/*": ["./node_modules/better-sqlite3/**/*"],
+  },
   /**
    * HMR / `/_next/*` em dev: IP na LAN e túneis ngrok (origem ≠ localhost).
    * Wildcards: ver `isCsrfOriginAllowed` no Next — `*.ngrok-free.app` cobre URLs como `xxxx.ngrok-free.app`.
