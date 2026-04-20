@@ -202,7 +202,7 @@ function dataEntregaResumo(n: Notificacao): string {
 }
 
 export function NotificacoesApp() {
-  const [tab, setTab] = useState("lista");
+  const [tab, setTab] = useState<"lista" | "cadastro" | "backup">("lista");
   const [lista, setLista] = useState<Notificacao[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
@@ -214,6 +214,8 @@ export function NotificacoesApp() {
   const [form, setForm] = useState<FormState>(emptyForm);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  const [backupLoading, setBackupLoading] = useState(false);
+  const [restoreLoading, setRestoreLoading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Notificacao | null>(null);
   const [deleting, setDeleting] = useState(false);
   const filtrosAtivos =
@@ -366,6 +368,59 @@ export function NotificacoesApp() {
       toast.error("Não foi possível excluir.");
     } finally {
       setDeleting(false);
+    }
+  }
+
+  async function exportarBackup() {
+    setBackupLoading(true);
+    try {
+      const res = await fetch(apiUrl("/api/backup"));
+      if (!res.ok) throw new Error(await readApiError(res));
+      const payload = (await res.json()) as unknown;
+      const json = JSON.stringify(payload, null, 2);
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const ts = new Date().toISOString().replaceAll(":", "-");
+      a.href = url;
+      a.download = `avisos-backup-${ts}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success("Backup exportado com sucesso.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível exportar o backup.");
+    } finally {
+      setBackupLoading(false);
+    }
+  }
+
+  async function restaurarBackup(file: File | null) {
+    if (!file) return;
+    const confirm = window.confirm(
+      "A restauração substitui os dados atuais. Deseja continuar?"
+    );
+    if (!confirm) return;
+
+    setRestoreLoading(true);
+    try {
+      const content = await file.text();
+      const parsed = JSON.parse(content) as unknown;
+      const res = await fetch(apiUrl("/api/backup"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(parsed),
+      });
+      if (!res.ok) throw new Error(await readApiError(res));
+      await fetchLista("");
+      setSearch("");
+      setTab("lista");
+      toast.success("Backup restaurado com sucesso.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível restaurar o backup.");
+    } finally {
+      setRestoreLoading(false);
     }
   }
 
@@ -999,9 +1054,85 @@ export function NotificacoesApp() {
               >
                 Voltar para a lista
               </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="ml-auto text-muted-foreground hover:text-foreground"
+                onClick={() => setTab("backup")}
+              >
+                Backup
+              </Button>
             </div>
           </form>
           </div>
+        )}
+        {tab === "backup" && (
+          <section className="flex flex-col gap-3 md:gap-4">
+            <Card className={cardFormClass}>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base font-semibold text-foreground">
+                  Backup dos dados
+                </CardTitle>
+                <CardDescription>
+                  Exporte um arquivo para guardar no seu dispositivo e use esse mesmo arquivo para restaurar quando precisar.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-5">
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm font-medium text-foreground">Exportar backup</p>
+                  <p className="text-muted-foreground text-sm">
+                    Gera um arquivo JSON com as notificações e inscrições de push.
+                  </p>
+                  <div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={backupLoading}
+                      onClick={() => void exportarBackup()}
+                    >
+                      {backupLoading ? "Exportando…" : "Baixar backup"}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="h-px w-full bg-border" />
+
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm font-medium text-foreground">Restaurar backup</p>
+                  <p className="text-muted-foreground text-sm">
+                    Envie um arquivo de backup para restaurar os dados do aplicativo.
+                  </p>
+                  <Input
+                    type="file"
+                    accept="application/json,.json"
+                    disabled={restoreLoading}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] ?? null;
+                      void restaurarBackup(file);
+                      e.currentTarget.value = "";
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Atenção: restaurar substitui os dados atuais.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" onClick={() => setTab("lista")}>
+                    Voltar para a lista
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setTab("cadastro")}
+                  >
+                    Voltar para cadastro
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </section>
         )}
       </div>
 
