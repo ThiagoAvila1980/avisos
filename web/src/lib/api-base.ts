@@ -14,5 +14,14 @@ export function getPublicApiBaseUrl(): string {
 export function apiUrl(path: string): string {
   const base = getPublicApiBaseUrl();
   const p = path.startsWith("/") ? path : `/${path}`;
-  return `${base}${p}`;
+  let url = `${base}${p}`;
+  // Evita mixed content se NEXT_PUBLIC_API_BASE_URL estiver como http:// em produção HTTPS.
+  if (
+    typeof window !== "undefined" &&
+    window.location.protocol === "https:" &&
+    url.startsWith("http://")
+  ) {
+    url = `https://${url.slice("http://".length)}`;
+  }
+  return url;
 }

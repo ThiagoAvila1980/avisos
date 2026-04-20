@@ -11,3 +11,13 @@ Thumbs.db
 /data/*.db
 /data/*.db-wal
 /data/*.db-shm
+
+# Proteções explícitas da app web (defesa extra)
+/web/.env
+/web/.env.*
+!/web/.env.example
+/web/.next/
+/web/node_modules/
+/web/data/*.db
+/web/data/*.db-wal
+/web/data/*.db-shm

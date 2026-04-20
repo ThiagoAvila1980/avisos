@@ -786,7 +786,7 @@ export function NotificacoesApp() {
           >
           <form
             onSubmit={handleSubmit}
-            className="form-fields-white flex flex-col gap-2"
+            className="form-fields-white flex flex-col gap-4 pb-2"
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-muted-foreground text-sm">
@@ -808,13 +808,13 @@ export function NotificacoesApp() {
             </div>
 
             <Card className={cardFormClass}>
-              <CardHeader className="pb-2">
+              <CardHeader className="pb-3">
                 <CardTitle className="text-base font-semibold text-foreground">
                   Cliente e documentos
                 </CardTitle>
                 
               </CardHeader>
-              <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <CardContent className="grid gap-4 pb-5 pt-0 sm:grid-cols-2 lg:grid-cols-3">
                 <div className="grid gap-2 sm:col-span-2 lg:col-span-1">
                   <Label htmlFor="nome_cliente">Nome do cliente *</Label>
                   <Input
@@ -856,13 +856,13 @@ export function NotificacoesApp() {
             </Card>
 
             <Card className={cardFormClass}>
-              <CardHeader className="pb-2">
+              <CardHeader className="pb-3">
                 <CardTitle className="text-base font-semibold text-foreground">
                   Prazos de entrega
                 </CardTitle>
                 
               </CardHeader>
-              <CardContent className="grid gap-4 sm:grid-cols-3">
+              <CardContent className="grid gap-4 pb-5 pt-0 sm:grid-cols-3">
                 <div className="grid gap-2">
                   <Label htmlFor="empenho_recebido">Empenho recebido</Label>
                   <Input
@@ -921,13 +921,13 @@ export function NotificacoesApp() {
             </Card>
 
             <Card className={cardFormClass}>
-              <CardHeader className="pb-2">
+              <CardHeader className="pb-3">
                 <CardTitle className="text-base font-semibold text-foreground">
                   Prorrogação e situação
                 </CardTitle>
                 
               </CardHeader>
-              <CardContent className="flex flex-col gap-4">
+              <CardContent className="flex flex-col gap-4 pb-5 pt-0">
                 <div className="grid gap-4 sm:grid-cols-3">
                   <div className="grid gap-2">
                     <Label htmlFor="pedido_prorrogacao">
@@ -1044,7 +1044,7 @@ export function NotificacoesApp() {
               </CardContent>
             </Card>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="mt-2 flex flex-wrap gap-3 sm:mt-4">
               <Button type="submit" disabled={saving}>
                 {saving
                   ? "Salvando…"

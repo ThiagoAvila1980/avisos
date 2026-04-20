@@ -179,13 +179,13 @@ Você pode copiar a **pasta `Avisos` completa** (pendrive, rede, ZIP, etc.) em v
 
 ## Lembretes de prazo (Web Push na VPS)
 
-Os lembretes automáticos **não** dependem mais do toast do Windows: em produção (`npm run build` seguido de `npm run start`), o Next.js carrega `src/instrumentation.ts`, que **de X em X tempo** chama **`POST /api/cron/reminders`** (HTTP interno em `127.0.0.1`). Essa rota consulta o SQLite e envia **Web Push** (mesma janela de datas: **PENDENTE** ou **PRORROGADO**, **hoje** … **hoje+2**). Também pode disparar o mesmo endpoint a partir do **Coolify/cron** externo, com `Authorization: Bearer` e o mesmo segredo.
+Os lembretes automáticos **não** dependem mais do toast do Windows: em produção (`npm run build` seguido de `npm run start`), o Next.js carrega `src/instrumentation.ts`, que chama **`POST /api/cron/reminders`** em horários fixos dentro de uma **janela diária** (por omissão **08:00–14:00**, de **2 em 2 horas** → **4 vezes por dia**; hora **local do servidor**). Essa rota consulta o SQLite e envia **Web Push** (mesma janela de datas: **PENDENTE** ou **PRORROGADO**, **hoje** … **hoje+2**). Também pode disparar o mesmo endpoint a partir do **Coolify/cron** externo, com `Authorization: Bearer` e o mesmo segredo.
 
 ### Configuração
 
 - Copie `web/.env.example` para `web/.env.local` na VPS e preencha pelo menos **VAPID** (`NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`) e origens/API conforme o seu domínio.
 - **Segredo do cron:** `CRON_SECRET` ou reutilize `PUSH_TEST_SECRET` (usado pelo `instrumentation` e pela rota `/api/cron/reminders`).
-- Opcional: `REMINDER_PUSH_ENABLED`, `REMINDER_PUSH_INTERVAL_MS` (intervalo entre chamadas internas; omissão ~2 horas em produção). Em **`npm run dev`** o timer interno **não** corre (evita ruído); a rota `/api/cron/reminders` continua disponível se chamada manualmente.
+- Opcional: `REMINDER_PUSH_ENABLED`, `REMINDER_PUSH_INTERVAL_MS` (passo entre horários na janela; omissão 2 h), `REMINDER_PUSH_FIRST_RUN_HOUR` (omissão `8`), `REMINDER_PUSH_LAST_RUN_HOUR` (omissão `14`). Em **`npm run dev`** o timer interno **não** corre (evita ruído); a rota `/api/cron/reminders` continua disponível se chamada manualmente.
 - Estado para não repetir o mesmo aviso no mesmo dia (lista de IDs): `web/data/reminder-push-state.json` (ignorado pelo Git).
 
 ### Processo único na VPS

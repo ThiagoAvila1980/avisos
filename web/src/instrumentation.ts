@@ -25,8 +25,7 @@ export async function register() {
   const port = process.env.PORT || "3000";
   const host = process.env.INTERNAL_CRON_HOST?.trim() || "127.0.0.1";
   const base = `http://${host}:${port}`;
-  const ms = getIntervalMs();
-  const startHour = getFirstRunHour();
+  const runHours = getRunSlotHours();
 
   const tick = () => {
     void (async () => {
@@ -49,15 +48,30 @@ export async function register() {
     return;
   }
 
-  const firstDelay = getDelayUntilNextAnchoredRun(ms, startHour);
+  if (runHours.length === 0) {
+    console.warn(
+      "[cron] REMINDER_PUSH_LAST_RUN_HOUR deve ser >= REMINDER_PUSH_FIRST_RUN_HOUR — sem slots de lembrete."
+    );
+    return;
+  }
+
+  const firstDelay = getMsUntilNextSlot(runHours);
   const firstAt = new Date(Date.now() + firstDelay);
+  const slotLabel = runHours
+    .map((h) => `${String(h).padStart(2, "0")}:00`)
+    .join(", ");
   console.log(
-    `[cron] lembretes a cada ${Math.round(ms / 60000)} min (início ${String(startHour).padStart(2, "0")}:00, próxima em ${Math.round(firstDelay / 60000)} min às ${firstAt.toLocaleString()}) → ${base}/api/cron/reminders`
+    `[cron] lembretes ${runHours.length}x/dia às ${slotLabel} (hora local do servidor; próxima em ${Math.round(firstDelay / 60000)} min → ${firstAt.toLocaleString()}) → ${base}/api/cron/reminders`
   );
-  setTimeout(() => {
-    tick();
-    setInterval(tick, ms);
-  }, firstDelay);
+
+  function scheduleNext() {
+    const delay = getMsUntilNextSlot(runHours);
+    setTimeout(() => {
+      tick();
+      scheduleNext();
+    }, delay);
+  }
+  scheduleNext();
 }
 
 function isReminderCronEnabled(): boolean {
@@ -67,6 +81,7 @@ function isReminderCronEnabled(): boolean {
   return process.env.NODE_ENV === "production";
 }
 
+/** Intervalo entre horários dentro da janela (omissão 2 h). */
 function getIntervalMs(): number {
   const raw = process.env.REMINDER_PUSH_INTERVAL_MS?.trim();
   if (raw) {
@@ -85,17 +100,47 @@ function getFirstRunHour(): number {
   return 8;
 }
 
-function getDelayUntilNextAnchoredRun(intervalMs: number, startHour: number): number {
-  const now = new Date();
-  const anchor = new Date(now);
-  anchor.setHours(startHour, 0, 0, 0);
+/** Última hora inclusiva da janela diária (omissão 14 → 08:00 … 14:00). */
+function getLastRunHour(): number {
+  const raw = process.env.REMINDER_PUSH_LAST_RUN_HOUR?.trim();
+  if (raw) {
+    const n = Number.parseInt(raw, 10);
+    if (Number.isFinite(n) && n >= 0 && n <= 23) return n;
+  }
+  return 14;
+}
 
-  if (now.getTime() <= anchor.getTime()) {
-    return anchor.getTime() - now.getTime();
+/**
+ * Horários do dia em que corre o cron, entre FIRST e LAST, de INTERVAL em INTERVAL (ex.: 8,10,12,14).
+ */
+function getRunSlotHours(): number[] {
+  const first = getFirstRunHour();
+  const last = getLastRunHour();
+  if (last < first) return [];
+
+  const stepMs = getIntervalMs();
+  const stepHours = Math.max(1, Math.round(stepMs / (60 * 60 * 1000)));
+  const hours: number[] = [];
+  for (let h = first; h <= last; h += stepHours) {
+    if (h <= 23) hours.push(h);
+  }
+  return hours;
+}
+
+function getMsUntilNextSlot(runHours: number[]): number {
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  for (const hour of runHours) {
+    const slot = new Date(todayStart);
+    slot.setHours(hour, 0, 0, 0);
+    if (slot.getTime() >= now.getTime()) {
+      return slot.getTime() - now.getTime();
+    }
   }
 
-  const elapsed = now.getTime() - anchor.getTime();
-  const steps = Math.ceil(elapsed / intervalMs);
-  const next = anchor.getTime() + steps * intervalMs;
-  return Math.max(0, next - now.getTime());
+  const tomorrowFirst = new Date(todayStart);
+  tomorrowFirst.setDate(tomorrowFirst.getDate() + 1);
+  tomorrowFirst.setHours(runHours[0], 0, 0, 0);
+  return tomorrowFirst.getTime() - now.getTime();
 }
