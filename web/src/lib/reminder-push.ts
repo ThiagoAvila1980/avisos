@@ -126,6 +126,9 @@ export function getReminderPushIntervalMs(): number {
  * envia Web Push a todas as subscrições. Grava estado só se pelo menos um envio HTTP 2xx.
  */
 export async function runReminderPushOnce(): Promise<void> {
+  if (!isReminderPushEnabled()) {
+    return;
+  }
   if (!isPushConfigured() || !configureWebPush()) {
     return;
   }
@@ -213,31 +216,3 @@ export async function runReminderPushOnce(): Promise<void> {
   }
 }
 
-export function startReminderPushScheduler(): void {
-  if (!isReminderPushEnabled()) {
-    console.log(
-      "[reminder-push] agendador desligado (REMINDER_PUSH_ENABLED ou ambiente)."
-    );
-    return;
-  }
-
-  if (!isPushConfigured()) {
-    console.warn(
-      "[reminder-push] VAPID ausente — lembretes push automáticos não iniciam."
-    );
-    return;
-  }
-
-  const ms = getReminderPushIntervalMs();
-  const run = () => {
-    void runReminderPushOnce().catch((e) =>
-      console.error("[reminder-push]", e)
-    );
-  };
-
-  console.log(
-    `[reminder-push] agendador a cada ${Math.round(ms / 60000)} min (primeira verificação em 15 s).`
-  );
-  setTimeout(run, 15_000);
-  setInterval(run, ms);
-}

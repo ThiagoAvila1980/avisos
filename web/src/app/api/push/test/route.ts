@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import webpush from "web-push";
 import { handleSqliteModuleError } from "@/lib/api-errors";
 import { getDb } from "@/lib/db";
+import {
+  DEFAULT_PUSH_BODY,
+  DEFAULT_PUSH_TITLE,
+} from "@/lib/push-defaults";
 import { configureWebPush, isPushConfigured } from "@/lib/web-push-server";
 
 type Row = {
@@ -37,14 +41,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Falha ao configurar VAPID." }, { status: 503 });
   }
 
-  let title = "Avisos — teste";
-  let body = "Notificação push de teste.";
+  let title = DEFAULT_PUSH_TITLE;
+  let body = DEFAULT_PUSH_BODY;
   try {
     const json = (await request.json()) as { title?: string; body?: string };
     if (typeof json.title === "string" && json.title.trim()) title = json.title.trim();
     if (typeof json.body === "string" && json.body.trim()) body = json.body.trim();
   } catch {
-    /* corpo opcional */
+    /* Corpo opcional: usa sempre os valores padrão em push-defaults. */
   }
 
   const payload = JSON.stringify({ title, body });

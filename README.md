@@ -173,17 +173,19 @@ Você pode copiar a **pasta `Avisos` completa** (pendrive, rede, ZIP, etc.) em v
 | Erro do **better-sqlite3** / NODE_MODULE_VERSION | Rode `npm rebuild better-sqlite3` na pasta `web`, com o mesmo Node que você usa para o `npm run dev`. |
 | Página abre mas a API retorna erro 500 / 503 | Geralmente SQLite incompatível com a versão do Node — mesmo procedimento acima. |
 | Copiei só o código e **sumiram os registros** | A pasta `web/data` (e o `.db`) não foi copiada ou não estava no backup. |
+| No **telefone / outro PC** (`http://IP:3000`), consola com erros `WebSocket … _next/webpack-hmr failed` | O HMR precisa de TCP **3000** aberto no **Firewall do Windows** na máquina que corre `npm run dev` (regra de entrada). Verifique também **isolamento de AP** no router (Wi‑Fi “convidado” impede falar com o PC). A app continua a funcionar com **recarregar a página**; só o reload automático falha. Limpe cache do site no telemóvel se trocou de Turbopack para Webpack. |
 
 ---
 
 ## Lembretes de prazo (Web Push na VPS)
 
-Os lembretes automáticos **não** dependem mais do toast do Windows: com o servidor em produção (`npm run build` seguido de `npm run start`), o Next.js carrega `src/instrumentation.ts`, que agenda verificações periódicas e envia **notificações push** aos navegadores que ativaram push na app (mesma janela de datas que antes: registros **PENDENTE** ou **PRORROGADO** com data de referência entre **hoje** e **hoje+2** dias).
+Os lembretes automáticos **não** dependem mais do toast do Windows: em produção (`npm run build` seguido de `npm run start`), o Next.js carrega `src/instrumentation.ts`, que **de X em X tempo** chama **`POST /api/cron/reminders`** (HTTP interno em `127.0.0.1`). Essa rota consulta o SQLite e envia **Web Push** (mesma janela de datas: **PENDENTE** ou **PRORROGADO**, **hoje** … **hoje+2**). Também pode disparar o mesmo endpoint a partir do **Coolify/cron** externo, com `Authorization: Bearer` e o mesmo segredo.
 
 ### Configuração
 
 - Copie `web/.env.example` para `web/.env.local` na VPS e preencha pelo menos **VAPID** (`NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`) e origens/API conforme o seu domínio.
-- Opcional: `REMINDER_PUSH_ENABLED`, `REMINDER_PUSH_INTERVAL_MS` (intervalo entre verificações; omissão ~2 horas em produção).
+- **Segredo do cron:** `CRON_SECRET` ou reutilize `PUSH_TEST_SECRET` (usado pelo `instrumentation` e pela rota `/api/cron/reminders`).
+- Opcional: `REMINDER_PUSH_ENABLED`, `REMINDER_PUSH_INTERVAL_MS` (intervalo entre chamadas internas; omissão ~2 horas em produção). Em **`npm run dev`** o timer interno **não** corre (evita ruído); a rota `/api/cron/reminders` continua disponível se chamada manualmente.
 - Estado para não repetir o mesmo aviso no mesmo dia (lista de IDs): `web/data/reminder-push-state.json` (ignorado pelo Git).
 
 ### Processo único na VPS
@@ -254,7 +256,7 @@ Se ainda quiser disparar o `.bat` pelo **Agendador de Tarefas** só para ver log
 - **Next.js** (React), **Tailwind CSS**, componentes **shadcn/ui**
 - **SQLite** em arquivo local (`better-sqlite3`)
 - **Docker** — `web/Dockerfile` (output `standalone`) e `docker-compose.yml` na raiz com volume para `notificacoes.db`
-- **web-push** (VAPID) — notificações push no navegador; lembretes agendados no servidor via `instrumentation.ts`
+- **web-push** (VAPID) — notificações push no navegador; agendamento via `instrumentation.ts` → `POST /api/cron/reminders`
 - **node-notifier** — opcional / legado (toast Windows comentado em `check-entregas-reminder.cjs`)
 
 ---

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import {
   ClipboardListIcon,
   PencilIcon,
+  Plus,
   RefreshCwIcon,
   Trash2Icon,
 } from "lucide-react";
@@ -15,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -47,6 +49,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { apiUrl } from "@/lib/api-base";
+import { PushSubscribeToolbar } from "@/components/push-subscribe-toolbar";
 import { cn } from "@/lib/utils";
 
 const cardFormClass =
@@ -162,12 +165,40 @@ function formatDateBR(iso: string | null | undefined) {
   return `${d}/${m}/${y}`;
 }
 
-function statusBadgeVariant(
-  s: StatusNotificacao
-): "secondary" | "outline" | "default" {
-  if (s === "PENDENTE") return "secondary";
-  if (s === "PRORROGADO") return "outline";
-  return "default";
+/** Cores fixas dos estados (lista + cartões). */
+function statusBadgeClassName(s: StatusNotificacao): string {
+  switch (s) {
+    case "PENDENTE":
+      return "border-transparent bg-orange-500 text-white hover:bg-orange-500";
+    case "PRORROGADO":
+      return "border-transparent bg-red-600 text-white hover:bg-red-600";
+    case "ENTREGUE":
+      return "border-transparent bg-green-600 text-white hover:bg-green-600";
+    default:
+      return "";
+  }
+}
+
+/** Borda esquerda dos cartões mobile alinhada ao status. */
+function statusCardLeftBorderClassName(s: StatusNotificacao): string {
+  switch (s) {
+    case "PENDENTE":
+      return "border-l-orange-500";
+    case "PRORROGADO":
+      return "border-l-red-600";
+    case "ENTREGUE":
+      return "border-l-green-600";
+    default:
+      return "border-l-border";
+  }
+}
+
+/** Data de entrega a mostrar no cartão resumido (prioriza nova data se prorrogado). */
+function dataEntregaResumo(n: Notificacao): string {
+  if (n.status === "PRORROGADO" && n.data_nova_para_entregar?.trim()) {
+    return formatDateBR(n.data_nova_para_entregar);
+  }
+  return formatDateBR(n.data_para_entregar);
 }
 
 export function NotificacoesApp() {
@@ -309,20 +340,22 @@ export function NotificacoesApp() {
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 p-4 pb-12 md:p-8 md:pb-16">
-      <header className="space-y-4">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
-          <div
-            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 text-primary shadow-inner ring-1 ring-primary/20"
-            aria-hidden
-          >
-            <ClipboardListIcon className="size-7" strokeWidth={1.75} />
+      <header className="space-y-4 rounded-2xl border border-primary/15 bg-primary/[0.14] p-4 shadow-sm ring-1 ring-primary/10 md:p-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
+            <div
+              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 text-primary shadow-inner ring-1 ring-primary/20"
+              aria-hidden
+            >
+              <ClipboardListIcon className="size-7" strokeWidth={1.75} />
+            </div>
+            <div className="min-w-0 flex-1 space-y-2">
+              <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
+                Controle de prazos de notificações
+              </h1>
+            </div>
           </div>
-          <div className="min-w-0 flex-1 space-y-2">
-            <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
-              Controle de prazos de notificações
-            </h1>
-            
-          </div>
+          <PushSubscribeToolbar />
         </div>
         <div
           className="h-px w-full bg-gradient-to-r from-transparent via-primary/35 to-transparent"
@@ -375,52 +408,41 @@ export function NotificacoesApp() {
             id="tab-panel-lista"
             aria-labelledby="tab-trigger-lista"
           >
-          <div className="form-fields-white flex flex-col gap-3 sm:flex-row sm:items-end">
-            <div className="grid w-full max-w-md gap-2">
+          <div className="form-fields-white flex flex-col gap-3">
+            <div className="flex min-w-0 flex-col gap-2">
               <Label htmlFor="busca">Pesquisar</Label>
-              <Input
-                id="busca"
-                placeholder="Cliente, empenho, autorização ou observação…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") void fetchLista();
-                }}
-              />
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button type="button" onClick={() => void fetchLista()}>
-                Buscar
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setSearch("");
-                  void fetchLista("");
-                }}
-              >
-                Limpar
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => void fetchLista()}
-                title="Atualizar lista"
-              >
-                <RefreshCwIcon
-                  className={cn("size-4", loading && "animate-spin")}
+              <div className="flex min-w-0 flex-nowrap items-center gap-2">
+                <Input
+                  id="busca"
+                  placeholder="Cliente, empenho, autorização ou observação…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") void fetchLista();
+                  }}
+                  className="h-9 w-auto min-w-0 max-w-[17rem] flex-1"
                 />
-                Atualizar
-              </Button>
-              <Button type="button" onClick={novoCadastro}>
-                Nova notificação
-              </Button>
+                <div className="flex shrink-0 gap-2">
+                  <Button type="button" onClick={() => void fetchLista()}>
+                    Buscar
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setSearch("");
+                      void fetchLista("");
+                    }}
+                  >
+                    Limpar
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
 
           <Card className="overflow-hidden border-primary/15 shadow-md ring-1 ring-primary/[0.07]">
-            <CardHeader className="border-b border-primary/10 bg-primary/[0.04] pb-3">
+            <CardHeader className="border-b border-primary/15 bg-primary/[0.14] pb-3">
               <CardTitle className="text-base font-semibold text-foreground">
                 Lista
               </CardTitle>
@@ -431,12 +453,112 @@ export function NotificacoesApp() {
                     ? `${lista.length} registro(s) com o filtro de pesquisa ativo (“${search.trim()}”). Use Limpar para ver todos.`
                     : `${lista.length} registro(s) encontrado(s).`}
               </CardDescription>
+              <CardAction>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="text-foreground hover:bg-primary/20"
+                  onClick={() => void fetchLista()}
+                  title="Atualizar lista"
+                  aria-label="Atualizar lista"
+                >
+                  <RefreshCwIcon
+                    className={cn("size-6", loading && "animate-spin")}
+                  />
+                </Button>
+              </CardAction>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="overflow-x-auto">
+              {/* Mobile: cartões enxutos */}
+              <div className="md:hidden flex flex-col gap-2 p-3">
+                {lista.length === 0 && !loading ? (
+                  <p className="text-muted-foreground py-8 text-center text-sm">
+                    Nenhum registro. Use a aba Cadastro ou o botão +.
+                  </p>
+                ) : (
+                  lista.map((n) => (
+                    <div
+                      key={n.id}
+                      className={cn(
+                        "border-border/80 bg-card/80 rounded-xl border border-l-4 px-3 py-2.5 shadow-sm ring-1 ring-primary/[0.06]",
+                        statusCardLeftBorderClassName(n.status)
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-foreground min-w-0 flex-1 text-sm leading-snug font-semibold">
+                          {n.nome_cliente}
+                        </p>
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "shrink-0 text-[10px] uppercase",
+                            statusBadgeClassName(n.status)
+                          )}
+                        >
+                          {n.status}
+                        </Badge>
+                      </div>
+                      <dl className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+                        <div>
+                          <dt className="text-muted-foreground text-[11px] tracking-wide uppercase">
+                            Empenho
+                          </dt>
+                          <dd className="text-foreground mt-0.5 font-medium tabular-nums">
+                            {n.numero_empenho?.trim() || "—"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-muted-foreground text-[11px] tracking-wide uppercase">
+                            Aut. fornec.
+                          </dt>
+                          <dd className="text-foreground mt-0.5 font-medium tabular-nums">
+                            {n.numero_autorizacao_fornecimento?.trim() || "—"}
+                          </dd>
+                        </div>
+                        <div className="col-span-2">
+                          <dt className="text-muted-foreground text-[11px] tracking-wide uppercase">
+                            {n.status === "PRORROGADO" &&
+                            n.data_nova_para_entregar?.trim()
+                              ? "Entregar (nova)"
+                              : "Entregar"}
+                          </dt>
+                          <dd className="text-foreground mt-0.5 font-semibold tabular-nums">
+                            {dataEntregaResumo(n)}
+                          </dd>
+                        </div>
+                      </dl>
+                      <div className="border-border/60 mt-2.5 flex justify-end gap-1 border-t pt-2">
+                        <Button
+                          type="button"
+                          size="icon-sm"
+                          variant="ghost"
+                          title="Editar"
+                          onClick={() => void loadForEdit(n.id)}
+                        >
+                          <PencilIcon className="size-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          size="icon-sm"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          title="Excluir"
+                          onClick={() => setDeleteTarget(n)}
+                        >
+                          <Trash2Icon className="size-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Tablet/desktop: tabela completa */}
+              <div className="hidden overflow-x-auto md:block">
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-primary/10 bg-primary/[0.06] hover:bg-primary/[0.06]">
+                    <TableRow className="border-primary/15 bg-primary/[0.12] hover:bg-primary/[0.12]">
                       <TableHead className="min-w-[140px]">Cliente</TableHead>
                       <TableHead className="min-w-[100px]">Empenho</TableHead>
                       <TableHead className="min-w-[120px]">
@@ -489,7 +611,10 @@ export function NotificacoesApp() {
                             {formatDateBR(n.data_nova_para_entregar)}
                           </TableCell>
                           <TableCell>
-                            <Badge variant={statusBadgeVariant(n.status)}>
+                            <Badge
+                              variant="outline"
+                              className={statusBadgeClassName(n.status)}
+                            >
                               {n.status}
                             </Badge>
                           </TableCell>
@@ -524,6 +649,18 @@ export function NotificacoesApp() {
               </div>
             </CardContent>
           </Card>
+
+          <Button
+            type="button"
+            variant="default"
+            size="icon-lg"
+            className="fixed bottom-6 right-6 z-50 size-14 rounded-full shadow-lg ring-2 ring-primary/25 md:bottom-8 md:right-8"
+            onClick={novoCadastro}
+            title="Nova notificação"
+            aria-label="Nova notificação"
+          >
+            <Plus className="size-7" strokeWidth={2} />
+          </Button>
           </div>
         )}
 

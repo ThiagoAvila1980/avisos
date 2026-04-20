@@ -11,7 +11,7 @@ if not exist "package.json" (
   exit /b 1
 )
 
-echo Iniciando servidor em http://localhost:3000
+echo Iniciando servidor em http://localhost:3000 ^(Webpack — use na rede: http://IP-DESTA-MAQUINA:3000^)
 echo Feche esta janela para parar o servidor.
 echo.
 

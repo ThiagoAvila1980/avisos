@@ -1,10 +1,72 @@
 /**
- * Executado ao iniciar o servidor Node (`next start`, `next dev`).
- * Agenda verificação periódica de prazos + envio Web Push (VPS).
+ * Arranque do servidor — agenda chamadas HTTP internas aos lembretes push,
+ * sem importar SQLite/web-push aqui (o Webpack em `next dev` falhava com `fs`).
+ *
+ * A lógica real está em `POST /api/cron/reminders` → `runReminderPushOnce()`.
  */
 export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
 
-  const { startReminderPushScheduler } = await import("@/lib/reminder-push");
-  startReminderPushScheduler();
+  const secret =
+    process.env.CRON_SECRET?.trim() || process.env.PUSH_TEST_SECRET?.trim();
+  if (!secret) {
+    console.warn(
+      "[cron] Defina CRON_SECRET ou PUSH_TEST_SECRET para lembretes agendados."
+    );
+    return;
+  }
+
+  const enabled = isReminderCronEnabled();
+  if (!enabled) {
+    console.log("[cron] Lembretes por intervalo desligados (REMINDER_PUSH_*).");
+    return;
+  }
+
+  const port = process.env.PORT || "3000";
+  const host = process.env.INTERNAL_CRON_HOST?.trim() || "127.0.0.1";
+  const base = `http://${host}:${port}`;
+  const ms = getIntervalMs();
+
+  const tick = () => {
+    void (async () => {
+      try {
+        const res = await fetch(`${base}/api/cron/reminders`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${secret}` },
+        });
+        if (!res.ok) {
+          const t = await res.text();
+          console.error("[cron] HTTP", res.status, t.slice(0, 200));
+        }
+      } catch (e) {
+        console.error("[cron] fetch:", e);
+      }
+    })();
+  };
+
+  if (process.env.NODE_ENV !== "production") {
+    return;
+  }
+
+  console.log(
+    `[cron] lembretes a cada ${Math.round(ms / 60000)} min (1.ª chamada em 15 s) → ${base}/api/cron/reminders`
+  );
+  setTimeout(tick, 15_000);
+  setInterval(tick, ms);
+}
+
+function isReminderCronEnabled(): boolean {
+  const v = process.env.REMINDER_PUSH_ENABLED?.trim().toLowerCase();
+  if (v === "0" || v === "false" || v === "no") return false;
+  if (v === "1" || v === "true" || v === "yes") return true;
+  return process.env.NODE_ENV === "production";
+}
+
+function getIntervalMs(): number {
+  const raw = process.env.REMINDER_PUSH_INTERVAL_MS?.trim();
+  if (raw) {
+    const n = Number.parseInt(raw, 10);
+    if (Number.isFinite(n) && n >= 60_000) return n;
+  }
+  return 2 * 60 * 60 * 1000;
 }
