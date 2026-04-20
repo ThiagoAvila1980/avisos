@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
+  ChevronDownIcon,
   ClipboardListIcon,
   PencilIcon,
   Plus,
@@ -488,9 +489,13 @@ export function NotificacoesApp() {
                 </div>
               </div>
             </div>
-            <details className="rounded-lg border border-primary/15 bg-card/80 p-2.5 md:p-3">
-              <summary className="cursor-pointer list-none text-sm font-medium text-foreground">
-                Filtros
+            <details className="group rounded-lg border border-primary/15 bg-card/80 p-2.5 md:p-3">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-sm font-medium text-foreground">
+                <span>Filtros</span>
+                <ChevronDownIcon
+                  className="size-4 text-muted-foreground transition-transform duration-200 group-open:rotate-180"
+                  aria-hidden
+                />
               </summary>
               <div className="mt-2.5 grid gap-2 md:grid-cols-3 md:gap-3">
                 <div className="grid gap-1.5">

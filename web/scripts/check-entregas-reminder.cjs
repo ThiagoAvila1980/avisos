@@ -86,14 +86,13 @@ function main() {
           AND data_para_entregar IS NOT NULL
           AND TRIM(data_para_entregar) != ''
           AND date(data_para_entregar) >= date('now', 'localtime')
-          AND date(data_para_entregar) <= date('now', 'localtime', '+1 days')
           AND date(data_para_entregar) <= date('now', 'localtime', '+2 days')
         )
         OR (
           status = 'PRORROGADO'
           AND data_nova_para_entregar IS NOT NULL
           AND TRIM(data_nova_para_entregar) != ''
-          AND date(data_nova_para_entregar) <= date('now', 'localtime', '+1 days')
+          AND date(data_nova_para_entregar) >= date('now', 'localtime')
           AND date(data_nova_para_entregar) <= date('now', 'localtime', '+2 days')
         )
       )

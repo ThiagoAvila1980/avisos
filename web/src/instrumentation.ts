@@ -26,6 +26,7 @@ export async function register() {
   const host = process.env.INTERNAL_CRON_HOST?.trim() || "127.0.0.1";
   const base = `http://${host}:${port}`;
   const ms = getIntervalMs();
+  const startHour = getFirstRunHour();
 
   const tick = () => {
     void (async () => {
@@ -48,11 +49,15 @@ export async function register() {
     return;
   }
 
+  const firstDelay = getDelayUntilNextAnchoredRun(ms, startHour);
+  const firstAt = new Date(Date.now() + firstDelay);
   console.log(
-    `[cron] lembretes a cada ${Math.round(ms / 60000)} min (1.ª chamada em 15 s) → ${base}/api/cron/reminders`
+    `[cron] lembretes a cada ${Math.round(ms / 60000)} min (início ${String(startHour).padStart(2, "0")}:00, próxima em ${Math.round(firstDelay / 60000)} min às ${firstAt.toLocaleString()}) → ${base}/api/cron/reminders`
   );
-  setTimeout(tick, 15_000);
-  setInterval(tick, ms);
+  setTimeout(() => {
+    tick();
+    setInterval(tick, ms);
+  }, firstDelay);
 }
 
 function isReminderCronEnabled(): boolean {
@@ -69,4 +74,28 @@ function getIntervalMs(): number {
     if (Number.isFinite(n) && n >= 60_000) return n;
   }
   return 2 * 60 * 60 * 1000;
+}
+
+function getFirstRunHour(): number {
+  const raw = process.env.REMINDER_PUSH_FIRST_RUN_HOUR?.trim();
+  if (raw) {
+    const n = Number.parseInt(raw, 10);
+    if (Number.isFinite(n) && n >= 0 && n <= 23) return n;
+  }
+  return 8;
+}
+
+function getDelayUntilNextAnchoredRun(intervalMs: number, startHour: number): number {
+  const now = new Date();
+  const anchor = new Date(now);
+  anchor.setHours(startHour, 0, 0, 0);
+
+  if (now.getTime() <= anchor.getTime()) {
+    return anchor.getTime() - now.getTime();
+  }
+
+  const elapsed = now.getTime() - anchor.getTime();
+  const steps = Math.ceil(elapsed / intervalMs);
+  const next = anchor.getTime() + steps * intervalMs;
+  return Math.max(0, next - now.getTime());
 }
