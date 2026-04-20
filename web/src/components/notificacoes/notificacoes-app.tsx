@@ -218,8 +218,8 @@ export function NotificacoesApp() {
       const q =
         queryOverride !== undefined ? queryOverride.trim() : search.trim();
       const url = q
-        ? apiUrl(`/notificacoes?q=${encodeURIComponent(q)}`)
-        : apiUrl("/notificacoes");
+        ? apiUrl(`/api/notificacoes?q=${encodeURIComponent(q)}`)
+        : apiUrl("/api/notificacoes");
       const res = await fetch(url);
       if (!res.ok) throw new Error(await readApiError(res));
       const data = (await res.json()) as Notificacao[];
@@ -239,7 +239,7 @@ export function NotificacoesApp() {
     void (async () => {
       setLoading(true);
       try {
-        const res = await fetch(apiUrl("/notificacoes"));
+        const res = await fetch(apiUrl("/api/notificacoes"));
         if (!res.ok) throw new Error(await readApiError(res));
         const data = (await res.json()) as Notificacao[];
         setLista(data);
@@ -258,7 +258,7 @@ export function NotificacoesApp() {
   async function loadForEdit(id: number) {
     setLoading(true);
     try {
-      const res = await fetch(apiUrl(`/notificacoes/${id}`));
+      const res = await fetch(apiUrl(`/api/notificacoes/${id}`));
       if (!res.ok) throw new Error(await readApiError(res));
       const row = (await res.json()) as Notificacao;
       setForm(fromRow(row));
@@ -290,8 +290,8 @@ export function NotificacoesApp() {
       const payload = toPayload(form);
       const url =
         editingId !== null
-          ? apiUrl(`/notificacoes/${editingId}`)
-          : apiUrl("/notificacoes");
+          ? apiUrl(`/api/notificacoes/${editingId}`)
+          : apiUrl("/api/notificacoes");
       const res = await fetch(url, {
         method: editingId !== null ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -320,7 +320,7 @@ export function NotificacoesApp() {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      const res = await fetch(apiUrl(`/notificacoes/${deleteTarget.id}`), {
+      const res = await fetch(apiUrl(`/api/notificacoes/${deleteTarget.id}`), {
         method: "DELETE",
       });
       if (!res.ok) throw new Error();
@@ -339,8 +339,8 @@ export function NotificacoesApp() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 p-4 pb-12 md:p-8 md:pb-16">
-      <header className="space-y-4 rounded-2xl border border-primary/15 bg-primary/[0.14] p-4 shadow-sm ring-1 ring-primary/10 md:p-5">
+    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 p-2 pb-6 md:gap-8 md:p-8 md:pb-16">
+      <header className="space-y-3 rounded-lg border border-primary/10 bg-primary/[0.1] p-3 shadow-sm ring-1 ring-primary/[0.06] md:space-y-4 md:rounded-2xl md:border-primary/15 md:bg-primary/[0.14] md:p-5 md:ring-primary/10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
             <div
@@ -363,7 +363,7 @@ export function NotificacoesApp() {
         />
       </header>
 
-      <div className="flex flex-1 flex-col gap-5">
+      <div className="flex flex-1 flex-col gap-3 md:gap-5">
         <div
           className="inline-flex h-9 w-fit items-center justify-center rounded-xl border border-primary/15 bg-primary/10 p-1 text-muted-foreground shadow-sm ring-1 ring-primary/10"
           role="tablist"
@@ -403,15 +403,15 @@ export function NotificacoesApp() {
 
         {tab === "lista" && (
           <div
-            className="flex flex-col gap-4 outline-none"
+            className="flex flex-col gap-3 outline-none md:gap-4"
             role="tabpanel"
             id="tab-panel-lista"
             aria-labelledby="tab-trigger-lista"
           >
-          <div className="form-fields-white flex flex-col gap-3">
+          <div className="form-fields-white flex flex-col gap-2 md:gap-3">
             <div className="flex min-w-0 flex-col gap-2">
               <Label htmlFor="busca">Pesquisar</Label>
-              <div className="flex min-w-0 flex-nowrap items-center gap-2">
+              <div className="flex min-w-0 flex-nowrap items-center gap-1.5 md:gap-2">
                 <Input
                   id="busca"
                   placeholder="Cliente, empenho, autorização ou observação…"
@@ -420,9 +420,9 @@ export function NotificacoesApp() {
                   onKeyDown={(e) => {
                     if (e.key === "Enter") void fetchLista();
                   }}
-                  className="h-9 w-auto min-w-0 max-w-[17rem] flex-1"
+                  className="h-8 w-auto min-w-0 max-w-[17rem] flex-1 md:h-9"
                 />
-                <div className="flex shrink-0 gap-2">
+                <div className="flex shrink-0 gap-1.5 md:gap-2">
                   <Button type="button" onClick={() => void fetchLista()}>
                     Buscar
                   </Button>
@@ -441,8 +441,8 @@ export function NotificacoesApp() {
             </div>
           </div>
 
-          <Card className="overflow-hidden border-primary/15 shadow-md ring-1 ring-primary/[0.07]">
-            <CardHeader className="border-b border-primary/15 bg-primary/[0.14] pb-3">
+          <Card className="overflow-hidden border-primary/10 shadow-sm ring-1 ring-primary/[0.05] md:border-primary/15 md:shadow-md md:ring-primary/[0.07]">
+            <CardHeader className="border-b border-primary/10 bg-primary/[0.1] px-3 pb-2 md:border-primary/15 md:bg-primary/[0.14] md:pb-3">
               <CardTitle className="text-base font-semibold text-foreground">
                 Lista
               </CardTitle>
@@ -471,7 +471,7 @@ export function NotificacoesApp() {
             </CardHeader>
             <CardContent className="p-0">
               {/* Mobile: cartões enxutos */}
-              <div className="md:hidden flex flex-col gap-2 p-3">
+              <div className="flex flex-col gap-1.5 p-2 md:hidden">
                 {lista.length === 0 && !loading ? (
                   <p className="text-muted-foreground py-8 text-center text-sm">
                     Nenhum registro. Use a aba Cadastro ou o botão +.
@@ -481,11 +481,11 @@ export function NotificacoesApp() {
                     <div
                       key={n.id}
                       className={cn(
-                        "border-border/80 bg-card/80 rounded-xl border border-l-4 px-3 py-2.5 shadow-sm ring-1 ring-primary/[0.06]",
+                        "border-border/70 bg-card/80 rounded-lg border border-l-4 px-2.5 py-2 shadow-sm ring-1 ring-primary/[0.05]",
                         statusCardLeftBorderClassName(n.status)
                       )}
                     >
-                      <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start justify-between gap-1.5">
                         <p className="text-foreground min-w-0 flex-1 text-sm leading-snug font-semibold">
                           {n.nome_cliente}
                         </p>
@@ -499,7 +499,7 @@ export function NotificacoesApp() {
                           {n.status}
                         </Badge>
                       </div>
-                      <dl className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+                      <dl className="mt-2 grid grid-cols-2 gap-x-2 gap-y-1.5 text-sm">
                         <div>
                           <dt className="text-muted-foreground text-[11px] tracking-wide uppercase">
                             Empenho
@@ -528,7 +528,7 @@ export function NotificacoesApp() {
                           </dd>
                         </div>
                       </dl>
-                      <div className="border-border/60 mt-2.5 flex justify-end gap-1 border-t pt-2">
+                      <div className="border-border/60 mt-2 flex justify-end gap-1 border-t pt-1.5">
                         <Button
                           type="button"
                           size="icon-sm"
