@@ -218,8 +218,8 @@ export function NotificacoesApp() {
       const q =
         queryOverride !== undefined ? queryOverride.trim() : search.trim();
       const url = q
-        ? apiUrl(`/api/notificacoes?q=${encodeURIComponent(q)}`)
-        : apiUrl("/api/notificacoes");
+        ? apiUrl(`/notificacoes?q=${encodeURIComponent(q)}`)
+        : apiUrl("/notificacoes");
       const res = await fetch(url);
       if (!res.ok) throw new Error(await readApiError(res));
       const data = (await res.json()) as Notificacao[];
@@ -239,7 +239,7 @@ export function NotificacoesApp() {
     void (async () => {
       setLoading(true);
       try {
-        const res = await fetch(apiUrl("/api/notificacoes"));
+        const res = await fetch(apiUrl("/notificacoes"));
         if (!res.ok) throw new Error(await readApiError(res));
         const data = (await res.json()) as Notificacao[];
         setLista(data);
@@ -258,7 +258,7 @@ export function NotificacoesApp() {
   async function loadForEdit(id: number) {
     setLoading(true);
     try {
-      const res = await fetch(apiUrl(`/api/notificacoes/${id}`));
+      const res = await fetch(apiUrl(`/notificacoes/${id}`));
       if (!res.ok) throw new Error(await readApiError(res));
       const row = (await res.json()) as Notificacao;
       setForm(fromRow(row));
@@ -290,8 +290,8 @@ export function NotificacoesApp() {
       const payload = toPayload(form);
       const url =
         editingId !== null
-          ? apiUrl(`/api/notificacoes/${editingId}`)
-          : apiUrl("/api/notificacoes");
+          ? apiUrl(`/notificacoes/${editingId}`)
+          : apiUrl("/notificacoes");
       const res = await fetch(url, {
         method: editingId !== null ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -320,7 +320,7 @@ export function NotificacoesApp() {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      const res = await fetch(apiUrl(`/api/notificacoes/${deleteTarget.id}`), {
+      const res = await fetch(apiUrl(`/notificacoes/${deleteTarget.id}`), {
         method: "DELETE",
       });
       if (!res.ok) throw new Error();
