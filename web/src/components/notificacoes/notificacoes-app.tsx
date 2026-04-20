@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   ClipboardListIcon,
@@ -211,6 +211,28 @@ export function NotificacoesApp() {
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Notificacao | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const hasActiveSearch = search.trim().length > 0;
+
+  const indicadores = useMemo(() => {
+    const porStatus = lista.reduce(
+      (acc, item) => {
+        acc[item.status] += 1;
+        return acc;
+      },
+      {
+        PENDENTE: 0,
+        PRORROGADO: 0,
+        ENTREGUE: 0,
+      } satisfies Record<StatusNotificacao, number>
+    );
+
+    return [
+      { label: "Total", value: lista.length },
+      { label: "Pendente", value: porStatus.PENDENTE },
+      { label: "Prorrogado", value: porStatus.PRORROGADO },
+      { label: "Entregue", value: porStatus.ENTREGUE },
+    ];
+  }, [lista]);
 
   const fetchLista = useCallback(async (queryOverride?: string) => {
     setLoading(true);
@@ -339,33 +361,57 @@ export function NotificacoesApp() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 p-4 pb-12 md:p-8 md:pb-16">
-      <header className="space-y-4 rounded-2xl border border-primary/15 bg-primary/[0.14] p-4 shadow-sm ring-1 ring-primary/10 md:p-5">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
-            <div
-              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 text-primary shadow-inner ring-1 ring-primary/20"
-              aria-hidden
-            >
-              <ClipboardListIcon className="size-7" strokeWidth={1.75} />
+    <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 p-4 pb-12 md:gap-8 md:p-8 md:pb-16">
+      <header className="rounded-3xl border border-primary/20 bg-gradient-to-br from-card/95 via-card/85 to-primary/10 p-5 shadow-lg ring-1 ring-primary/10 backdrop-blur-sm md:p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-3">
+            <div className="inline-flex items-center gap-3 rounded-full border border-primary/20 bg-primary/8 px-3 py-1 text-xs text-primary">
+              <ClipboardListIcon className="size-4" />
+              Painel operacional
             </div>
-            <div className="min-w-0 flex-1 space-y-2">
-              <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
-                Controle de prazos de notificações
-              </h1>
-            </div>
+            <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
+              Controle de prazos de notificações
+            </h1>
+            <p className="max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">
+              Organize prazos, acompanhe status e mantenha o histórico de
+              entregas com uma interface mais clara para operação diária.
+            </p>
           </div>
-          <PushSubscribeToolbar />
+          <div className="flex flex-col items-start gap-3 sm:items-end">
+            <PushSubscribeToolbar />
+            <Button
+              type="button"
+              className="hidden md:inline-flex"
+              onClick={novoCadastro}
+            >
+              <Plus className="mr-2 size-4" />
+              Nova notificação
+            </Button>
+          </div>
         </div>
-        <div
-          className="h-px w-full bg-gradient-to-r from-transparent via-primary/35 to-transparent"
-          aria-hidden
-        />
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {indicadores.map((item) => (
+            <Card
+              key={item.label}
+              size="sm"
+              className="border-primary/15 bg-card/80 py-2 shadow-sm ring-1 ring-primary/[0.06]"
+            >
+              <CardContent className="space-y-0.5">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  {item.label}
+                </p>
+                <p className="text-2xl font-semibold tabular-nums text-foreground">
+                  {item.value}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </header>
 
       <div className="flex flex-1 flex-col gap-5">
         <div
-          className="inline-flex h-9 w-fit items-center justify-center rounded-xl border border-primary/15 bg-primary/10 p-1 text-muted-foreground shadow-sm ring-1 ring-primary/10"
+          className="inline-flex h-10 w-fit items-center justify-center rounded-2xl border border-primary/15 bg-card/70 p-1 text-muted-foreground shadow-sm ring-1 ring-primary/10 backdrop-blur"
           role="tablist"
           aria-label="Seções da aplicação"
         >
@@ -375,7 +421,7 @@ export function NotificacoesApp() {
             aria-selected={tab === "lista"}
             id="tab-trigger-lista"
             className={cn(
-              "relative inline-flex h-[calc(100%-1px)] min-w-[7.5rem] items-center justify-center rounded-lg border border-transparent px-3 py-1 text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+              "relative inline-flex h-[calc(100%-1px)] min-w-[8rem] items-center justify-center rounded-xl border border-transparent px-3 py-1 text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
               tab === "lista"
                 ? "bg-card text-foreground shadow-md ring-1 ring-primary/20"
                 : "text-muted-foreground hover:bg-primary/5 hover:text-foreground"
@@ -390,7 +436,7 @@ export function NotificacoesApp() {
             aria-selected={tab === "cadastro"}
             id="tab-trigger-cadastro"
             className={cn(
-              "relative inline-flex h-[calc(100%-1px)] min-w-[7.5rem] items-center justify-center rounded-lg border border-transparent px-3 py-1 text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+              "relative inline-flex h-[calc(100%-1px)] min-w-[8rem] items-center justify-center rounded-xl border border-transparent px-3 py-1 text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
               tab === "cadastro"
                 ? "bg-card text-foreground shadow-md ring-1 ring-primary/20"
                 : "text-muted-foreground hover:bg-primary/5 hover:text-foreground"
@@ -408,21 +454,22 @@ export function NotificacoesApp() {
             id="tab-panel-lista"
             aria-labelledby="tab-trigger-lista"
           >
-          <div className="form-fields-white flex flex-col gap-3">
-            <div className="flex min-w-0 flex-col gap-2">
-              <Label htmlFor="busca">Pesquisar</Label>
-              <div className="flex min-w-0 flex-nowrap items-center gap-2">
-                <Input
-                  id="busca"
-                  placeholder="Cliente, empenho, autorização ou observação…"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") void fetchLista();
-                  }}
-                  className="h-9 w-auto min-w-0 max-w-[17rem] flex-1"
-                />
-                <div className="flex shrink-0 gap-2">
+            <Card className="form-fields-white border-primary/15 bg-card/85 shadow-sm ring-1 ring-primary/[0.06]">
+              <CardContent className="grid gap-3 pt-4 md:grid-cols-[1fr_auto] md:items-end">
+                <div className="grid gap-2">
+                  <Label htmlFor="busca">Pesquisar</Label>
+                  <Input
+                    id="busca"
+                    placeholder="Cliente, empenho, autorização ou observação…"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") void fetchLista();
+                    }}
+                    className="h-10"
+                  />
+                </div>
+                <div className="flex flex-wrap gap-2">
                   <Button type="button" onClick={() => void fetchLista()}>
                     Buscar
                   </Button>
@@ -437,230 +484,227 @@ export function NotificacoesApp() {
                     Limpar
                   </Button>
                 </div>
-              </div>
-            </div>
-          </div>
+              </CardContent>
+            </Card>
 
-          <Card className="overflow-hidden border-primary/15 shadow-md ring-1 ring-primary/[0.07]">
-            <CardHeader className="border-b border-primary/15 bg-primary/[0.14] pb-3">
-              <CardTitle className="text-base font-semibold text-foreground">
-                Lista
-              </CardTitle>
-              <CardDescription>
-                {loading
-                  ? "Carregando…"
-                  : search.trim()
-                    ? `${lista.length} registro(s) com o filtro de pesquisa ativo (“${search.trim()}”). Use Limpar para ver todos.`
-                    : `${lista.length} registro(s) encontrado(s).`}
-              </CardDescription>
-              <CardAction>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  className="text-foreground hover:bg-primary/20"
-                  onClick={() => void fetchLista()}
-                  title="Atualizar lista"
-                  aria-label="Atualizar lista"
-                >
-                  <RefreshCwIcon
-                    className={cn("size-6", loading && "animate-spin")}
-                  />
-                </Button>
-              </CardAction>
-            </CardHeader>
-            <CardContent className="p-0">
-              {/* Mobile: cartões enxutos */}
-              <div className="md:hidden flex flex-col gap-2 p-3">
-                {lista.length === 0 && !loading ? (
-                  <p className="text-muted-foreground py-8 text-center text-sm">
-                    Nenhum registro. Use a aba Cadastro ou o botão +.
-                  </p>
-                ) : (
-                  lista.map((n) => (
-                    <div
-                      key={n.id}
-                      className={cn(
-                        "border-border/80 bg-card/80 rounded-xl border border-l-4 px-3 py-2.5 shadow-sm ring-1 ring-primary/[0.06]",
-                        statusCardLeftBorderClassName(n.status)
-                      )}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="text-foreground min-w-0 flex-1 text-sm leading-snug font-semibold">
-                          {n.nome_cliente}
-                        </p>
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "shrink-0 text-[10px] uppercase",
-                            statusBadgeClassName(n.status)
-                          )}
-                        >
-                          {n.status}
-                        </Badge>
-                      </div>
-                      <dl className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
-                        <div>
-                          <dt className="text-muted-foreground text-[11px] tracking-wide uppercase">
-                            Empenho
-                          </dt>
-                          <dd className="text-foreground mt-0.5 font-medium tabular-nums">
-                            {n.numero_empenho?.trim() || "—"}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt className="text-muted-foreground text-[11px] tracking-wide uppercase">
-                            Aut. fornec.
-                          </dt>
-                          <dd className="text-foreground mt-0.5 font-medium tabular-nums">
-                            {n.numero_autorizacao_fornecimento?.trim() || "—"}
-                          </dd>
-                        </div>
-                        <div className="col-span-2">
-                          <dt className="text-muted-foreground text-[11px] tracking-wide uppercase">
-                            {n.status === "PRORROGADO" &&
-                            n.data_nova_para_entregar?.trim()
-                              ? "Entregar (nova)"
-                              : "Entregar"}
-                          </dt>
-                          <dd className="text-foreground mt-0.5 font-semibold tabular-nums">
-                            {dataEntregaResumo(n)}
-                          </dd>
-                        </div>
-                      </dl>
-                      <div className="border-border/60 mt-2.5 flex justify-end gap-1 border-t pt-2">
-                        <Button
-                          type="button"
-                          size="icon-sm"
-                          variant="ghost"
-                          title="Editar"
-                          onClick={() => void loadForEdit(n.id)}
-                        >
-                          <PencilIcon className="size-4" />
-                        </Button>
-                        <Button
-                          type="button"
-                          size="icon-sm"
-                          variant="ghost"
-                          className="text-destructive hover:text-destructive"
-                          title="Excluir"
-                          onClick={() => setDeleteTarget(n)}
-                        >
-                          <Trash2Icon className="size-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {/* Tablet/desktop: tabela completa */}
-              <div className="hidden overflow-x-auto md:block">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-primary/15 bg-primary/[0.12] hover:bg-primary/[0.12]">
-                      <TableHead className="min-w-[140px]">Cliente</TableHead>
-                      <TableHead className="min-w-[100px]">Empenho</TableHead>
-                      <TableHead className="min-w-[120px]">
-                        Aut. fornecimento
-                      </TableHead>
-                      <TableHead>Emp. recebido</TableHead>
-                      <TableHead>Entregar</TableHead>
-                      <TableHead>Ped. prorrogação</TableHead>
-                      <TableHead>Nova entrega</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {lista.length === 0 && !loading ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={9}
-                          className="text-muted-foreground h-24 text-center"
-                        >
-                          Nenhum registro. Use a aba Cadastro ou “Nova
-                          notificação”.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      lista.map((n) => (
-                        <TableRow
-                          key={n.id}
-                          className="border-primary/5 transition-colors hover:bg-primary/[0.04]"
-                        >
-                          <TableCell className="font-medium">
+            <Card className="overflow-hidden border-primary/15 shadow-md ring-1 ring-primary/[0.07]">
+              <CardHeader className="border-b border-primary/15 bg-primary/[0.1] pb-3">
+                <CardTitle className="text-base font-semibold text-foreground">
+                  Lista de notificações
+                </CardTitle>
+                <CardDescription>
+                  {loading
+                    ? "Carregando…"
+                    : hasActiveSearch
+                      ? `${lista.length} registro(s) com filtro ativo em “${search.trim()}”.`
+                      : `${lista.length} registro(s) encontrado(s).`}
+                </CardDescription>
+                <CardAction>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="text-foreground hover:bg-primary/20"
+                    onClick={() => void fetchLista()}
+                    title="Atualizar lista"
+                    aria-label="Atualizar lista"
+                  >
+                    <RefreshCwIcon
+                      className={cn("size-6", loading && "animate-spin")}
+                    />
+                  </Button>
+                </CardAction>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="flex flex-col gap-2 p-3 md:hidden">
+                  {lista.length === 0 && !loading ? (
+                    <p className="py-8 text-center text-sm text-muted-foreground">
+                      Nenhum registro. Use a aba Cadastro ou o botão +.
+                    </p>
+                  ) : (
+                    lista.map((n) => (
+                      <div
+                        key={n.id}
+                        className={cn(
+                          "rounded-xl border border-l-4 border-border/80 bg-card/85 px-3 py-2.5 shadow-sm ring-1 ring-primary/[0.06]",
+                          statusCardLeftBorderClassName(n.status)
+                        )}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="min-w-0 flex-1 text-sm leading-snug font-semibold text-foreground">
                             {n.nome_cliente}
-                          </TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            {n.numero_empenho ?? "—"}
-                          </TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            {n.numero_autorizacao_fornecimento ?? "—"}
-                          </TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            {formatDateBR(n.empenho_recebido)}
-                          </TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            {formatDateBR(n.data_para_entregar)}
-                          </TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            {formatDateBR(n.pedido_prorrogacao)}
-                          </TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            {formatDateBR(n.data_nova_para_entregar)}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant="outline"
-                              className={statusBadgeClassName(n.status)}
-                            >
-                              {n.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-1">
-                              <Button
-                                type="button"
-                                size="icon-sm"
-                                variant="ghost"
-                                title="Editar"
-                                onClick={() => void loadForEdit(n.id)}
-                              >
-                                <PencilIcon className="size-4" />
-                              </Button>
-                              <Button
-                                type="button"
-                                size="icon-sm"
-                                variant="ghost"
-                                className="text-destructive hover:text-destructive"
-                                title="Excluir"
-                                onClick={() => setDeleteTarget(n)}
-                              >
-                                <Trash2Icon className="size-4" />
-                              </Button>
-                            </div>
+                          </p>
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "shrink-0 text-[10px] uppercase",
+                              statusBadgeClassName(n.status)
+                            )}
+                          >
+                            {n.status}
+                          </Badge>
+                        </div>
+                        <dl className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+                          <div>
+                            <dt className="text-[11px] tracking-wide uppercase text-muted-foreground">
+                              Empenho
+                            </dt>
+                            <dd className="mt-0.5 font-medium tabular-nums text-foreground">
+                              {n.numero_empenho?.trim() || "—"}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt className="text-[11px] tracking-wide uppercase text-muted-foreground">
+                              Aut. fornec.
+                            </dt>
+                            <dd className="mt-0.5 font-medium tabular-nums text-foreground">
+                              {n.numero_autorizacao_fornecimento?.trim() || "—"}
+                            </dd>
+                          </div>
+                          <div className="col-span-2">
+                            <dt className="text-[11px] tracking-wide uppercase text-muted-foreground">
+                              {n.status === "PRORROGADO" &&
+                              n.data_nova_para_entregar?.trim()
+                                ? "Entregar (nova)"
+                                : "Entregar"}
+                            </dt>
+                            <dd className="mt-0.5 font-semibold tabular-nums text-foreground">
+                              {dataEntregaResumo(n)}
+                            </dd>
+                          </div>
+                        </dl>
+                        <div className="mt-2.5 flex justify-end gap-1 border-t border-border/60 pt-2">
+                          <Button
+                            type="button"
+                            size="icon-sm"
+                            variant="ghost"
+                            title="Editar"
+                            onClick={() => void loadForEdit(n.id)}
+                          >
+                            <PencilIcon className="size-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            size="icon-sm"
+                            variant="ghost"
+                            className="text-destructive hover:text-destructive"
+                            title="Excluir"
+                            onClick={() => setDeleteTarget(n)}
+                          >
+                            <Trash2Icon className="size-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div className="hidden overflow-x-auto md:block">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-primary/15 bg-primary/[0.1] hover:bg-primary/[0.1]">
+                        <TableHead className="min-w-[140px]">Cliente</TableHead>
+                        <TableHead className="min-w-[100px]">Empenho</TableHead>
+                        <TableHead className="min-w-[120px]">
+                          Aut. fornecimento
+                        </TableHead>
+                        <TableHead>Emp. recebido</TableHead>
+                        <TableHead>Entregar</TableHead>
+                        <TableHead>Ped. prorrogação</TableHead>
+                        <TableHead>Nova entrega</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {lista.length === 0 && !loading ? (
+                        <TableRow>
+                          <TableCell
+                            colSpan={9}
+                            className="h-24 text-center text-muted-foreground"
+                          >
+                            Nenhum registro. Use a aba Cadastro ou “Nova
+                            notificação”.
                           </TableCell>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
+                      ) : (
+                        lista.map((n) => (
+                          <TableRow
+                            key={n.id}
+                            className="border-primary/5 transition-colors hover:bg-primary/[0.04]"
+                          >
+                            <TableCell className="font-medium">
+                              {n.nome_cliente}
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              {n.numero_empenho ?? "—"}
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              {n.numero_autorizacao_fornecimento ?? "—"}
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              {formatDateBR(n.empenho_recebido)}
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              {formatDateBR(n.data_para_entregar)}
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              {formatDateBR(n.pedido_prorrogacao)}
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              {formatDateBR(n.data_nova_para_entregar)}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant="outline"
+                                className={statusBadgeClassName(n.status)}
+                              >
+                                {n.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-1">
+                                <Button
+                                  type="button"
+                                  size="icon-sm"
+                                  variant="ghost"
+                                  title="Editar"
+                                  onClick={() => void loadForEdit(n.id)}
+                                >
+                                  <PencilIcon className="size-4" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="icon-sm"
+                                  variant="ghost"
+                                  className="text-destructive hover:text-destructive"
+                                  title="Excluir"
+                                  onClick={() => setDeleteTarget(n)}
+                                >
+                                  <Trash2Icon className="size-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
 
-          <Button
-            type="button"
-            variant="default"
-            size="icon-lg"
-            className="fixed bottom-6 right-6 z-50 size-14 rounded-full shadow-lg ring-2 ring-primary/25 md:bottom-8 md:right-8"
-            onClick={novoCadastro}
-            title="Nova notificação"
-            aria-label="Nova notificação"
-          >
-            <Plus className="size-7" strokeWidth={2} />
-          </Button>
+            <Button
+              type="button"
+              variant="default"
+              size="icon-lg"
+              className="fixed right-6 bottom-6 z-50 size-14 rounded-full shadow-lg ring-2 ring-primary/25 md:hidden"
+              onClick={novoCadastro}
+              title="Nova notificação"
+              aria-label="Nova notificação"
+            >
+              <Plus className="size-7" strokeWidth={2} />
+            </Button>
           </div>
         )}
 
@@ -671,283 +715,282 @@ export function NotificacoesApp() {
             id="tab-panel-cadastro"
             aria-labelledby="tab-trigger-cadastro"
           >
-          <form
-            onSubmit={handleSubmit}
-            className="form-fields-white flex flex-col gap-2"
-          >
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-muted-foreground text-sm">
-                {editingId !== null
-                  ? `Editando registro #${editingId}`
-                  : "Novo registro"}
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setForm(emptyForm());
-                  setEditingId(null);
-                }}
-              >
-                Limpar formulário
-              </Button>
-            </div>
-
-            <Card className={cardFormClass}>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold text-foreground">
-                  Cliente e documentos
-                </CardTitle>
-                
-              </CardHeader>
-              <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <div className="grid gap-2 sm:col-span-2 lg:col-span-1">
-                  <Label htmlFor="nome_cliente">Nome do cliente *</Label>
-                  <Input
-                    id="nome_cliente"
-                    value={form.nome_cliente}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, nome_cliente: e.target.value }))
-                    }
-                    required
-                    autoComplete="off"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="numero_empenho">Número do empenho</Label>
-                  <Input
-                    id="numero_empenho"
-                    value={form.numero_empenho}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, numero_empenho: e.target.value }))
-                    }
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="numero_autorizacao_fornecimento">
-                    Nº autorização do fornecimento
-                  </Label>
-                  <Input
-                    id="numero_autorizacao_fornecimento"
-                    value={form.numero_autorizacao_fornecimento}
-                    onChange={(e) =>
-                      setForm((f) => ({
-                        ...f,
-                        numero_autorizacao_fornecimento: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className={cardFormClass}>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold text-foreground">
-                  Prazos de entrega
-                </CardTitle>
-                
-              </CardHeader>
-              <CardContent className="grid gap-4 sm:grid-cols-3">
-                <div className="grid gap-2">
-                  <Label htmlFor="empenho_recebido">Empenho recebido</Label>
-                  <Input
-                    id="empenho_recebido"
-                    type="date"
-                    value={form.empenho_recebido}
-                    onChange={(e) => {
-                      const empenho_recebido = e.target.value;
-                      setForm((f) => ({
-                        ...f,
-                        empenho_recebido,
-                        data_para_entregar: calcularDataSomandoPrazo(
-                          empenho_recebido,
-                          f.prazo_entrega
-                        ),
-                      }));
+            <form
+              onSubmit={handleSubmit}
+              className="form-fields-white flex flex-col gap-3"
+            >
+              <Card className="border-primary/15 bg-card/85 shadow-sm ring-1 ring-primary/[0.06]">
+                <CardContent className="flex flex-wrap items-center justify-between gap-2 pt-4">
+                  <p className="text-sm text-muted-foreground">
+                    {editingId !== null
+                      ? `Editando registro #${editingId}`
+                      : "Novo registro"}
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setForm(emptyForm());
+                      setEditingId(null);
                     }}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="prazo_entrega">Prazo para a entrega (dias)</Label>
-                  <Input
-                    id="prazo_entrega"
-                    type="number"
-                    min={0}
-                    inputMode="numeric"
-                    value={form.prazo_entrega}
-                    onChange={(e) => {
-                      const prazo_entrega = e.target.value;
-                      setForm((f) => ({
-                        ...f,
-                        prazo_entrega,
-                        data_para_entregar: calcularDataSomandoPrazo(
-                          f.empenho_recebido,
-                          prazo_entrega
-                        ),
-                      }));
-                    }}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="data_para_entregar">Data para entregar</Label>
-                  <Input
-                    id="data_para_entregar"
-                    type="date"
-                    value={form.data_para_entregar}
-                    onChange={(e) =>
-                      setForm((f) => ({
-                        ...f,
-                        data_para_entregar: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-              </CardContent>
-            </Card>
+                  >
+                    Limpar formulário
+                  </Button>
+                </CardContent>
+              </Card>
 
-            <Card className={cardFormClass}>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold text-foreground">
-                  Prorrogação e situação
-                </CardTitle>
-                
-              </CardHeader>
-              <CardContent className="flex flex-col gap-4">
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <div className="grid gap-2">
-                    <Label htmlFor="pedido_prorrogacao">
-                      Pedido de prorrogação
-                    </Label>
+              <Card className={cardFormClass}>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base font-semibold text-foreground">
+                    Cliente e documentos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid gap-2 sm:col-span-2 lg:col-span-1">
+                    <Label htmlFor="nome_cliente">Nome do cliente *</Label>
                     <Input
-                      id="pedido_prorrogacao"
-                      type="date"
-                      value={form.pedido_prorrogacao}
-                      onChange={(e) => {
-                        const pedido_prorrogacao = e.target.value;
-                        setForm((f) => {
-                          const data_nova_para_entregar = calcularDataSomandoPrazo(
-                            pedido_prorrogacao,
-                            f.dias_prorrogacao
-                          );
-                          return {
-                            ...f,
-                            pedido_prorrogacao,
-                            data_nova_para_entregar,
-                            ...(data_nova_para_entregar.trim() !== ""
-                              ? { status: "PRORROGADO" as const }
-                              : {}),
-                          };
-                        });
-                      }}
+                      id="nome_cliente"
+                      value={form.nome_cliente}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, nome_cliente: e.target.value }))
+                      }
+                      required
+                      autoComplete="off"
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="dias_prorrogacao">
-                      Dias de prorrogação
-                    </Label>
+                    <Label htmlFor="numero_empenho">Número do empenho</Label>
                     <Input
-                      id="dias_prorrogacao"
-                      type="number"
-                      min={0}
-                      inputMode="numeric"
-                      value={form.dias_prorrogacao}
-                      onChange={(e) => {
-                        const dias_prorrogacao = e.target.value;
-                        setForm((f) => {
-                          const data_nova_para_entregar = calcularDataSomandoPrazo(
-                            f.pedido_prorrogacao,
-                            dias_prorrogacao
-                          );
-                          return {
-                            ...f,
-                            dias_prorrogacao,
-                            data_nova_para_entregar,
-                            ...(data_nova_para_entregar.trim() !== ""
-                              ? { status: "PRORROGADO" as const }
-                              : {}),
-                          };
-                        });
-                      }}
+                      id="numero_empenho"
+                      value={form.numero_empenho}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, numero_empenho: e.target.value }))
+                      }
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="data_nova_para_entregar">
-                      Nova data para entregar
+                    <Label htmlFor="numero_autorizacao_fornecimento">
+                      Nº autorização do fornecimento
                     </Label>
                     <Input
-                      id="data_nova_para_entregar"
-                      type="date"
-                      value={form.data_nova_para_entregar}
-                      onChange={(e) => {
-                        const data_nova_para_entregar = e.target.value;
+                      id="numero_autorizacao_fornecimento"
+                      value={form.numero_autorizacao_fornecimento}
+                      onChange={(e) =>
                         setForm((f) => ({
                           ...f,
-                          data_nova_para_entregar,
-                          ...(data_nova_para_entregar.trim() !== ""
-                            ? { status: "PRORROGADO" as const }
-                            : {}),
+                          numero_autorizacao_fornecimento: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className={cardFormClass}>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base font-semibold text-foreground">
+                    Prazos de entrega
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-4 sm:grid-cols-3">
+                  <div className="grid gap-2">
+                    <Label htmlFor="empenho_recebido">Empenho recebido</Label>
+                    <Input
+                      id="empenho_recebido"
+                      type="date"
+                      value={form.empenho_recebido}
+                      onChange={(e) => {
+                        const empenho_recebido = e.target.value;
+                        setForm((f) => ({
+                          ...f,
+                          empenho_recebido,
+                          data_para_entregar: calcularDataSomandoPrazo(
+                            empenho_recebido,
+                            f.prazo_entrega
+                          ),
                         }));
                       }}
                     />
                   </div>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="observacao">Observação</Label>
-                  <Textarea
-                    id="observacao"
-                    rows={4}
-                    value={form.observacao}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, observacao: e.target.value }))
-                    }
-                    className="min-h-[100px] resize-y"
-                  />
-                </div>
-                <div className="grid max-w-xs gap-2">
-                  <Label>Status</Label>
-                  <Select
-                    value={form.status}
-                    onValueChange={(v) =>
-                      setForm((f) => ({
-                        ...f,
-                        status: v as StatusNotificacao,
-                      }))
-                    }
-                  >
-                    <SelectTrigger className="w-full min-w-[200px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {STATUS_NOTIFICACAO.map((s) => (
-                        <SelectItem key={s} value={s}>
-                          {s}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
+                  <div className="grid gap-2">
+                    <Label htmlFor="prazo_entrega">
+                      Prazo para a entrega (dias)
+                    </Label>
+                    <Input
+                      id="prazo_entrega"
+                      type="number"
+                      min={0}
+                      inputMode="numeric"
+                      value={form.prazo_entrega}
+                      onChange={(e) => {
+                        const prazo_entrega = e.target.value;
+                        setForm((f) => ({
+                          ...f,
+                          prazo_entrega,
+                          data_para_entregar: calcularDataSomandoPrazo(
+                            f.empenho_recebido,
+                            prazo_entrega
+                          ),
+                        }));
+                      }}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="data_para_entregar">Data para entregar</Label>
+                    <Input
+                      id="data_para_entregar"
+                      type="date"
+                      value={form.data_para_entregar}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          data_para_entregar: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                </CardContent>
+              </Card>
 
-            <div className="flex flex-wrap gap-2">
-              <Button type="submit" disabled={saving}>
-                {saving
-                  ? "Salvando…"
-                  : editingId !== null
-                    ? "Salvar alterações"
-                    : "Cadastrar"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setTab("lista")}
-              >
-                Voltar para a lista
-              </Button>
-            </div>
-          </form>
+              <Card className={cardFormClass}>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base font-semibold text-foreground">
+                    Prorrogação e situação
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-4">
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <div className="grid gap-2">
+                      <Label htmlFor="pedido_prorrogacao">
+                        Pedido de prorrogação
+                      </Label>
+                      <Input
+                        id="pedido_prorrogacao"
+                        type="date"
+                        value={form.pedido_prorrogacao}
+                        onChange={(e) => {
+                          const pedido_prorrogacao = e.target.value;
+                          setForm((f) => {
+                            const data_nova_para_entregar = calcularDataSomandoPrazo(
+                              pedido_prorrogacao,
+                              f.dias_prorrogacao
+                            );
+                            return {
+                              ...f,
+                              pedido_prorrogacao,
+                              data_nova_para_entregar,
+                              ...(data_nova_para_entregar.trim() !== ""
+                                ? { status: "PRORROGADO" as const }
+                                : {}),
+                            };
+                          });
+                        }}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="dias_prorrogacao">Dias de prorrogação</Label>
+                      <Input
+                        id="dias_prorrogacao"
+                        type="number"
+                        min={0}
+                        inputMode="numeric"
+                        value={form.dias_prorrogacao}
+                        onChange={(e) => {
+                          const dias_prorrogacao = e.target.value;
+                          setForm((f) => {
+                            const data_nova_para_entregar = calcularDataSomandoPrazo(
+                              f.pedido_prorrogacao,
+                              dias_prorrogacao
+                            );
+                            return {
+                              ...f,
+                              dias_prorrogacao,
+                              data_nova_para_entregar,
+                              ...(data_nova_para_entregar.trim() !== ""
+                                ? { status: "PRORROGADO" as const }
+                                : {}),
+                            };
+                          });
+                        }}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="data_nova_para_entregar">
+                        Nova data para entregar
+                      </Label>
+                      <Input
+                        id="data_nova_para_entregar"
+                        type="date"
+                        value={form.data_nova_para_entregar}
+                        onChange={(e) => {
+                          const data_nova_para_entregar = e.target.value;
+                          setForm((f) => ({
+                            ...f,
+                            data_nova_para_entregar,
+                            ...(data_nova_para_entregar.trim() !== ""
+                              ? { status: "PRORROGADO" as const }
+                              : {}),
+                          }));
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="observacao">Observação</Label>
+                    <Textarea
+                      id="observacao"
+                      rows={4}
+                      value={form.observacao}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, observacao: e.target.value }))
+                      }
+                      className="min-h-[100px] resize-y"
+                    />
+                  </div>
+                  <div className="grid max-w-xs gap-2">
+                    <Label>Status</Label>
+                    <Select
+                      value={form.status}
+                      onValueChange={(v) =>
+                        setForm((f) => ({
+                          ...f,
+                          status: v as StatusNotificacao,
+                        }))
+                      }
+                    >
+                      <SelectTrigger className="w-full min-w-[200px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {STATUS_NOTIFICACAO.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {s}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="flex flex-wrap gap-2">
+                <Button type="submit" disabled={saving}>
+                  {saving
+                    ? "Salvando…"
+                    : editingId !== null
+                      ? "Salvar alterações"
+                      : "Cadastrar"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setTab("lista")}
+                >
+                  Voltar para a lista
+                </Button>
+              </div>
+            </form>
           </div>
         )}
       </div>
