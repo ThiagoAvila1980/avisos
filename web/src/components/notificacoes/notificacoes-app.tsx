@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   ClipboardListIcon,
@@ -206,11 +206,42 @@ export function NotificacoesApp() {
   const [lista, setLista] = useState<Notificacao[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [filtroStatus, setFiltroStatus] = useState<"TODOS" | StatusNotificacao>(
+    "TODOS"
+  );
+  const [filtroDataInicio, setFiltroDataInicio] = useState("");
+  const [filtroDataFim, setFiltroDataFim] = useState("");
   const [form, setForm] = useState<FormState>(emptyForm);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Notificacao | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const filtrosAtivos =
+    filtroStatus !== "TODOS" || filtroDataInicio.trim() !== "" || filtroDataFim.trim() !== "";
+
+  const listaFiltrada = useMemo(() => {
+    const dataEntregaParaFiltro = (n: Notificacao): string => {
+      if (n.status === "PRORROGADO" && n.data_nova_para_entregar?.trim()) {
+        return n.data_nova_para_entregar.trim();
+      }
+      return n.data_para_entregar?.trim() ?? "";
+    };
+
+    return lista.filter((n) => {
+      if (filtroStatus !== "TODOS" && n.status !== filtroStatus) {
+        return false;
+      }
+
+      const dataEntrega = dataEntregaParaFiltro(n);
+      if (filtroDataInicio.trim() !== "" && (!dataEntrega || dataEntrega < filtroDataInicio)) {
+        return false;
+      }
+      if (filtroDataFim.trim() !== "" && (!dataEntrega || dataEntrega > filtroDataFim)) {
+        return false;
+      }
+      return true;
+    });
+  }, [lista, filtroStatus, filtroDataInicio, filtroDataFim]);
 
   const fetchLista = useCallback(async (queryOverride?: string) => {
     setLoading(true);
@@ -364,49 +395,12 @@ export function NotificacoesApp() {
       </header>
 
       <div className="flex flex-1 flex-col gap-3 md:gap-5">
-        <div
-          className="inline-flex h-9 w-fit items-center justify-center rounded-xl border border-primary/15 bg-primary/10 p-1 text-muted-foreground shadow-sm ring-1 ring-primary/10"
-          role="tablist"
-          aria-label="Seções da aplicação"
-        >
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === "lista"}
-            id="tab-trigger-lista"
-            className={cn(
-              "relative inline-flex h-[calc(100%-1px)] min-w-[7.5rem] items-center justify-center rounded-lg border border-transparent px-3 py-1 text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
-              tab === "lista"
-                ? "bg-card text-foreground shadow-md ring-1 ring-primary/20"
-                : "text-muted-foreground hover:bg-primary/5 hover:text-foreground"
-            )}
-            onClick={() => setTab("lista")}
-          >
-            Notificações
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === "cadastro"}
-            id="tab-trigger-cadastro"
-            className={cn(
-              "relative inline-flex h-[calc(100%-1px)] min-w-[7.5rem] items-center justify-center rounded-lg border border-transparent px-3 py-1 text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
-              tab === "cadastro"
-                ? "bg-card text-foreground shadow-md ring-1 ring-primary/20"
-                : "text-muted-foreground hover:bg-primary/5 hover:text-foreground"
-            )}
-            onClick={() => setTab("cadastro")}
-          >
-            Cadastro
-          </button>
-        </div>
-
         {tab === "lista" && (
           <div
             className="flex flex-col gap-3 outline-none md:gap-4"
             role="tabpanel"
             id="tab-panel-lista"
-            aria-labelledby="tab-trigger-lista"
+            aria-label="Lista de notificações"
           >
           <div className="form-fields-white flex flex-col gap-2 md:gap-3">
             <div className="flex min-w-0 flex-col gap-2">
@@ -439,6 +433,66 @@ export function NotificacoesApp() {
                 </div>
               </div>
             </div>
+            <details className="rounded-lg border border-primary/15 bg-card/80 p-2.5 md:p-3">
+              <summary className="cursor-pointer list-none text-sm font-medium text-foreground">
+                Filtros
+              </summary>
+              <div className="mt-2.5 grid gap-2 md:grid-cols-3 md:gap-3">
+                <div className="grid gap-1.5">
+                  <Label>Status</Label>
+                  <Select
+                    value={filtroStatus}
+                    onValueChange={(v) =>
+                      setFiltroStatus(v as "TODOS" | StatusNotificacao)
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="TODOS">Todos</SelectItem>
+                      {STATUS_NOTIFICACAO.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {s}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="filtro_data_inicio">Período - início</Label>
+                  <Input
+                    id="filtro_data_inicio"
+                    type="date"
+                    value={filtroDataInicio}
+                    onChange={(e) => setFiltroDataInicio(e.target.value)}
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="filtro_data_fim">Período - fim</Label>
+                  <Input
+                    id="filtro_data_fim"
+                    type="date"
+                    value={filtroDataFim}
+                    onChange={(e) => setFiltroDataFim(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="mt-2 flex justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setFiltroStatus("TODOS");
+                    setFiltroDataInicio("");
+                    setFiltroDataFim("");
+                  }}
+                >
+                  Limpar filtros
+                </Button>
+              </div>
+            </details>
           </div>
 
           <Card className="overflow-hidden border-primary/10 shadow-sm ring-1 ring-primary/[0.05] md:border-primary/15 md:shadow-md md:ring-primary/[0.07]">
@@ -450,8 +504,8 @@ export function NotificacoesApp() {
                 {loading
                   ? "Carregando…"
                   : search.trim()
-                    ? `${lista.length} registro(s) com o filtro de pesquisa ativo (“${search.trim()}”). Use Limpar para ver todos.`
-                    : `${lista.length} registro(s) encontrado(s).`}
+                    ? `${listaFiltrada.length} registro(s) com pesquisa ativa (“${search.trim()}”)${filtrosAtivos ? " e filtros aplicados" : ""}.`
+                    : `${listaFiltrada.length} registro(s) encontrado(s)${filtrosAtivos ? " com filtros aplicados" : ""}.`}
               </CardDescription>
               <CardAction>
                 <Button
@@ -472,12 +526,12 @@ export function NotificacoesApp() {
             <CardContent className="p-0">
               {/* Mobile: cartões enxutos */}
               <div className="flex flex-col gap-1.5 p-2 md:hidden">
-                {lista.length === 0 && !loading ? (
+                {listaFiltrada.length === 0 && !loading ? (
                   <p className="text-muted-foreground py-8 text-center text-sm">
-                    Nenhum registro. Use a aba Cadastro ou o botão +.
+                    Nenhum registro. Use o botão + para criar uma notificação.
                   </p>
                 ) : (
-                  lista.map((n) => (
+                  listaFiltrada.map((n) => (
                     <div
                       key={n.id}
                       className={cn(
@@ -573,18 +627,17 @@ export function NotificacoesApp() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {lista.length === 0 && !loading ? (
+                    {listaFiltrada.length === 0 && !loading ? (
                       <TableRow>
                         <TableCell
                           colSpan={9}
                           className="text-muted-foreground h-24 text-center"
                         >
-                          Nenhum registro. Use a aba Cadastro ou “Nova
-                          notificação”.
+                          Nenhum registro. Use o botão “Nova notificação”.
                         </TableCell>
                       </TableRow>
                     ) : (
-                      lista.map((n) => (
+                      listaFiltrada.map((n) => (
                         <TableRow
                           key={n.id}
                           className="border-primary/5 transition-colors hover:bg-primary/[0.04]"
@@ -669,7 +722,7 @@ export function NotificacoesApp() {
             className="outline-none"
             role="tabpanel"
             id="tab-panel-cadastro"
-            aria-labelledby="tab-trigger-cadastro"
+            aria-label="Cadastro de notificações"
           >
           <form
             onSubmit={handleSubmit}
