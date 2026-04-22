@@ -11,6 +11,8 @@ services:
       - "3000:3000"
     env_file:
       - .env
+    environment:
+      - TZ=America/Sao_Paulo # Ajuste para o fuso local se necessário
     volumes:
       - ./data:/app/data
     restart: unless-stopped

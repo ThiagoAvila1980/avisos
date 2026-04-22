@@ -55,12 +55,16 @@ function todayLocal() {
   return `${y}-${m}-${day}`;
 }
 
-function loadState(): { day: string; signature: string } | null {
+function loadState(): { day: string; hour: number; signature: string } | null {
   try {
     const raw = fs.readFileSync(statePath(), "utf8");
-    const j = JSON.parse(raw) as { day?: string; signature?: string };
-    if (typeof j.day === "string" && typeof j.signature === "string") {
-      return { day: j.day, signature: j.signature };
+    const j = JSON.parse(raw) as { day?: string; hour?: number; signature?: string };
+    if (
+      typeof j.day === "string" &&
+      typeof j.hour === "number" &&
+      typeof j.signature === "string"
+    ) {
+      return { day: j.day, hour: j.hour, signature: j.signature };
     }
     return null;
   } catch {
@@ -68,12 +72,12 @@ function loadState(): { day: string; signature: string } | null {
   }
 }
 
-function saveState(day: string, signature: string) {
+function saveState(day: string, hour: number, signature: string) {
   try {
     fs.writeFileSync(
       statePath(),
       JSON.stringify(
-        { day, signature, updatedAt: new Date().toISOString() },
+        { day, hour, signature, updatedAt: new Date().toISOString() },
         null,
         2
       ),
@@ -129,6 +133,7 @@ export async function runReminderPushOnce(): Promise<void> {
     return;
   }
   if (!isPushConfigured() || !configureWebPush()) {
+    console.warn("[reminder-push] Web Push não configurado (faltam chaves VAPID).");
     return;
   }
 
@@ -154,8 +159,14 @@ export async function runReminderPushOnce(): Promise<void> {
     .join(",");
 
   const day = todayLocal();
+  const hour = new Date().getHours();
   const prev = loadState();
-  if (prev && prev.day === day && prev.signature === signature) {
+  if (
+    prev &&
+    prev.day === day &&
+    prev.hour === hour &&
+    prev.signature === signature
+  ) {
     return;
   }
 
@@ -208,7 +219,7 @@ export async function runReminderPushOnce(): Promise<void> {
   }
 
   if (anyOk) {
-    saveState(day, signature);
+    saveState(day, hour, signature);
     console.log(
       `[reminder-push] enviado (${rows.length} registro(s) na janela, ${subs.length} subscrição(ões)).`
     );

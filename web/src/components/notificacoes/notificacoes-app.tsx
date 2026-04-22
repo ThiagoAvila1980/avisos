@@ -427,11 +427,11 @@ export function NotificacoesApp() {
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 p-2 pb-6 md:gap-8 md:p-8 md:pb-16">
-      <header className="space-y-3 rounded-lg border border-primary/10 bg-primary/[0.1] p-3 shadow-sm ring-1 ring-primary/[0.06] md:space-y-4 md:rounded-2xl md:border-primary/15 md:bg-primary/[0.14] md:p-5 md:ring-primary/10">
+      <header className="space-y-3 rounded-lg border border-primary/10 bg-primary/10 p-3 shadow-sm ring-1 ring-primary/6 md:space-y-4 md:rounded-2xl md:border-primary/15 md:bg-primary/14 md:p-5 md:ring-primary/10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
             <div
-              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 text-primary shadow-inner ring-1 ring-primary/20"
+              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-primary/20 to-primary/5 text-primary shadow-inner ring-1 ring-primary/20"
               aria-hidden
             >
               <ClipboardListIcon className="size-7" strokeWidth={1.75} />
@@ -445,7 +445,7 @@ export function NotificacoesApp() {
           <PushSubscribeToolbar />
         </div>
         <div
-          className="h-px w-full bg-gradient-to-r from-transparent via-primary/35 to-transparent"
+          className="h-px w-full bg-linear-to-r from-transparent via-primary/35 to-transparent"
           aria-hidden
         />
       </header>
@@ -470,7 +470,7 @@ export function NotificacoesApp() {
                   onKeyDown={(e) => {
                     if (e.key === "Enter") void fetchLista();
                   }}
-                  className="h-8 w-auto min-w-0 max-w-[17rem] flex-1 md:h-9"
+                  className="h-8 w-auto min-w-0 max-w-68 flex-1 md:h-9"
                 />
                 <div className="flex shrink-0 gap-1.5 md:gap-2">
                   <Button type="button" onClick={() => void fetchLista()}>
@@ -555,8 +555,8 @@ export function NotificacoesApp() {
             </details>
           </div>
 
-          <Card className="overflow-hidden border-primary/10 shadow-sm ring-1 ring-primary/[0.05] md:border-primary/15 md:shadow-md md:ring-primary/[0.07]">
-            <CardHeader className="border-b border-primary/10 bg-primary/[0.1] px-3 pb-2 md:border-primary/15 md:bg-primary/[0.14] md:pb-3">
+          <Card className="overflow-hidden border-primary/10 shadow-sm ring-1 ring-primary/5 md:border-primary/15 md:shadow-md md:ring-primary/7">
+            <CardHeader className="border-b border-primary/10 bg-primary/10 px-3 pb-2 md:border-primary/15 md:bg-primary/14 md:pb-3">
               <CardTitle className="text-base font-semibold text-foreground">
                 Lista
               </CardTitle>
@@ -567,7 +567,17 @@ export function NotificacoesApp() {
                     ? `${listaFiltrada.length} registro(s) com pesquisa ativa (“${search.trim()}”)${filtrosAtivos ? " e filtros aplicados" : ""}.`
                     : `${listaFiltrada.length} registro(s) encontrado(s)${filtrosAtivos ? " com filtros aplicados" : ""}.`}
               </CardDescription>
-              <CardAction>
+              <CardAction className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="default"
+                  size="sm"
+                  className="h-8 px-3 md:h-9 md:px-4"
+                  onClick={novoCadastro}
+                >
+                  <Plus className="mr-2 size-4" strokeWidth={2.5} />
+                  Novo registro
+                </Button>
                 <Button
                   type="button"
                   variant="ghost"
@@ -595,7 +605,7 @@ export function NotificacoesApp() {
                     <div
                       key={n.id}
                       className={cn(
-                        "border-border/70 bg-card/80 rounded-lg border border-l-4 px-2.5 py-2 shadow-sm ring-1 ring-primary/[0.05]",
+                        "border-border/70 bg-card/80 rounded-lg border border-l-4 px-2.5 py-2 shadow-sm ring-1 ring-primary/5",
                         statusCardLeftBorderClassName(n.status)
                       )}
                     >
@@ -672,7 +682,7 @@ export function NotificacoesApp() {
               <div className="hidden overflow-x-auto md:block">
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-primary/15 bg-primary/[0.12] hover:bg-primary/[0.12]">
+                    <TableRow className="border-primary/15 bg-primary/12 hover:bg-primary/12">
                       <TableHead className="min-w-[140px]">Cliente</TableHead>
                       <TableHead className="min-w-[100px]">Empenho</TableHead>
                       <TableHead className="min-w-[120px]">
@@ -700,7 +710,7 @@ export function NotificacoesApp() {
                       listaFiltrada.map((n) => (
                         <TableRow
                           key={n.id}
-                          className="border-primary/5 transition-colors hover:bg-primary/[0.04]"
+                          className="border-primary/5 transition-colors hover:bg-primary/4"
                         >
                           <TableCell className="font-medium">
                             {n.nome_cliente}
@@ -763,17 +773,6 @@ export function NotificacoesApp() {
             </CardContent>
           </Card>
 
-          <Button
-            type="button"
-            variant="default"
-            size="icon-lg"
-            className="fixed bottom-6 right-6 z-50 size-14 rounded-full shadow-lg ring-2 ring-primary/25 md:bottom-8 md:right-8"
-            onClick={novoCadastro}
-            title="Nova notificação"
-            aria-label="Nova notificação"
-          >
-            <Plus className="size-7" strokeWidth={2} />
-          </Button>
           </div>
         )}
 

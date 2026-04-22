@@ -28,18 +28,22 @@ export async function register() {
   const runHours = getRunSlotHours();
 
   const tick = () => {
+    console.log("[cron] Executando verificação de lembretes...");
     void (async () => {
       try {
         const res = await fetch(`${base}/api/cron/reminders`, {
           method: "POST",
           headers: { Authorization: `Bearer ${secret}` },
         });
+        const status = res.status;
         if (!res.ok) {
           const t = await res.text();
-          console.error("[cron] HTTP", res.status, t.slice(0, 200));
+          console.error(`[cron] Falha na chamada HTTP (${status}):`, t.slice(0, 200));
+        } else {
+          console.log(`[cron] Chamada HTTP concluída com sucesso (${status}).`);
         }
       } catch (e) {
-        console.error("[cron] fetch:", e);
+        console.error("[cron] Erro ao disparar lembrete (fetch):", e);
       }
     })();
   };
