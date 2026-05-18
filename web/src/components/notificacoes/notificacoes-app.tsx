@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { toast } from "sonner";
 import {
   ChevronDownIcon,
-  ClipboardListIcon,
   PencilIcon,
   Plus,
   RefreshCwIcon,
@@ -431,10 +431,16 @@ export function NotificacoesApp() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
             <div
-              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-primary/20 to-primary/5 text-primary shadow-inner ring-1 ring-primary/20"
+              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-primary/20 to-primary/5 text-primary shadow-inner ring-1 ring-primary/20 overflow-hidden"
               aria-hidden
             >
-              <ClipboardListIcon className="size-7" strokeWidth={1.75} />
+              <Image
+                src="/logo_clarear_round.png"
+                alt="Logo Clarear"
+                width={48}
+                height={48}
+                className="h-12 w-12 rounded-full object-contain"
+              />
             </div>
             <div className="min-w-0 flex-1 space-y-2">
               <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
